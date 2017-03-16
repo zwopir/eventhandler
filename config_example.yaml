@@ -1,0 +1,14 @@
+---
+global:
+  stan_address: "localhost:4222"
+
+command:
+  cmd: "cat"
+  cmd_args:
+    - "-"
+  stdin_template: "{{ . | printf %v }}"
+  filters:
+    - source_field: "hostname"
+      regexp_match: "localhost"
+    - source_field: "check_name"
+      regexp_match: "check_.+"
