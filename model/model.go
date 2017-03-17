@@ -1,9 +1,9 @@
 package model
 
 import (
+	"ehclient/config"
 	"encoding/json"
 	"regexp"
-	"ehclient/config"
 )
 
 type Message map[string]string
@@ -16,7 +16,7 @@ type Filters []FilterFunc
 
 func (f Filters) MatchAll(m *Message) bool {
 	for _, f := range f {
-		if ! f(m) {
+		if !f(m) {
 			return false
 		}
 	}
@@ -38,7 +38,7 @@ func newRegexpFilterFunc(regexpString, sourceField string) (FilterFunc, error) {
 	}, nil
 }
 
-func NewFilters(configFilters []config.Filter) (Filters, error){
+func NewFilters(configFilters []config.Filter) (Filters, error) {
 	filters := Filters{}
 	for _, cf := range configFilters {
 		ff, err := newRegexpFilterFunc(cf.RegexpMatch, cf.SourceField)
@@ -49,5 +49,3 @@ func NewFilters(configFilters []config.Filter) (Filters, error){
 	}
 	return filters, nil
 }
-
-

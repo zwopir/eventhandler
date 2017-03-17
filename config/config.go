@@ -6,7 +6,7 @@ import (
 )
 
 type Config struct {
-	Global Global `yaml:"global"`
+	Global  Global  `yaml:"global"`
 	Command Command `yaml:"command"`
 }
 
@@ -15,10 +15,10 @@ type Global struct {
 }
 
 type Command struct {
-	Cmd string `yaml:"cmd"`
-	CmdArgs []string `yaml:"cmd_args"`
-	StdinTemplate string `yaml:"stdin_template"`
-	Filters []Filter `yaml:"filters"`
+	Cmd           string   `yaml:"cmd"`
+	CmdArgs       []string `yaml:"cmd_args"`
+	StdinTemplate string   `yaml:"stdin_template"`
+	Filters       []Filter `yaml:"filters"`
 }
 
 type Filter struct {

@@ -1,13 +1,12 @@
 package config
 
 import (
-	"testing"
 	"reflect"
+	"testing"
 )
 
-
-var configTT = []struct{
-	fixturesFile string
+var configTT = []struct {
+	fixturesFile   string
 	expectedConfig *Config
 }{
 	{"../config_example.yaml",

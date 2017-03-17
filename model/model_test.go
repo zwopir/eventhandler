@@ -6,14 +6,14 @@ import (
 )
 
 var (
-	modelTT = []struct{
-		message *Message
+	modelTT = []struct {
+		message       *Message
 		expectedMatch bool
 		configFilters []config.Filter
 	}{
 		{
 			&Message{
-				"hostname": "localhost",
+				"hostname":   "localhost",
 				"check_name": "check_whatever",
 			},
 			true,
@@ -30,7 +30,7 @@ var (
 		},
 		{
 			&Message{
-				"testkey": "testvalue",
+				"testkey":         "testvalue",
 				"another_testkey": "whatever",
 			},
 			false,
@@ -47,7 +47,7 @@ var (
 		},
 		{
 			&Message{
-				"hostname": "localhost",
+				"hostname":   "localhost",
 				"check_name": "check_whatever",
 			},
 			false,
@@ -92,4 +92,3 @@ func TestNewFilters(t *testing.T) {
 		)
 	}
 }
-
