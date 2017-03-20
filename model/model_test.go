@@ -80,7 +80,7 @@ func TestFilters_MatchAll(t *testing.T) {
 var notCompilingFilter = []config.Filter{
 	{
 		SourceField: "a_field",
-		RegexpMatch: "[[[aa]",
+		RegexpMatch: "((aa)",
 	},
 }
 

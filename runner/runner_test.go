@@ -82,3 +82,29 @@ func TestPipeRunner_Run(t *testing.T) {
 		}
 	}
 }
+
+
+func TestPipeRunner_Run2(t *testing.T) {
+	for _, tt := range runnerTestTable {
+		pr := NewPipeRunner(
+			context.Background(),
+			tt.cmdString,
+			tt.args,
+			tt.template,
+		)
+		b := bytes.NewBuffer([]byte(``))
+		err := pr.Run(tt.data, b)
+		if err != nil {
+			t.Errorf("running %s returned an error: %s",
+				tt.cmdString, err,
+			)
+		}
+
+		if string(b.Bytes()) != tt.data["key"] {
+			t.Errorf("expected %s from running %s, got %s",
+				tt.data["key"], string(b.Bytes()),
+			)
+		}
+	}
+}
+
