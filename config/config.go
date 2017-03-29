@@ -12,6 +12,8 @@ type Config struct {
 
 type Global struct {
 	StanAddress string `yaml:"stan_address"`
+	ClientID    string `yaml:"client_id"`
+	Subject     string `yaml:"subject"`
 }
 
 type Command struct {

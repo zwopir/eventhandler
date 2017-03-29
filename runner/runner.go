@@ -1,11 +1,11 @@
 package runner
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"os/exec"
 	"text/template"
-	"bytes"
 )
 
 type PipeRunner struct {

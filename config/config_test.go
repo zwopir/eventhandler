@@ -13,6 +13,8 @@ var configTT = []struct {
 		&Config{
 			Global: Global{
 				StanAddress: "localhost:4222",
+				ClientID:    "host.example.com",
+				Subject:     "eventhandler",
 			},
 			Command: Command{
 				Cmd:           "cat",

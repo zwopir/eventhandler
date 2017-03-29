@@ -1,6 +1,8 @@
 ---
 global:
   stan_address: "localhost:4222"
+  client_id: "host.example.com"
+  subject: "eventhandler"
 
 command:
   cmd: "cat"

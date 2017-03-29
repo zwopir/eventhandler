@@ -1,26 +1,25 @@
 package runner
 
 import (
-	"testing"
-	"text/template"
+	"bufio"
+	"bytes"
 	"context"
 	"io"
-	"bytes"
-	"bufio"
+	"testing"
+	"text/template"
 )
 
-
 func createTestTemplate() *template.Template {
-	const templateText= `{{ index . "key"}}`
+	const templateText = `{{ index . "key"}}`
 	tmpl, _ := template.New("testTemplate").Parse(templateText)
 	return tmpl
 }
 
 var runnerTestTable = []struct {
-	data map[string]string
+	data      map[string]string
 	cmdString string
-	args []string
-	template *template.Template
+	args      []string
+	template  *template.Template
 }{
 	{
 		map[string]string{"key": "value"},
@@ -49,12 +48,11 @@ func createMockExecFunc() ExecFunc {
 	}
 }
 
-
-var runTestTable = []struct{
-	data map[string]string
-	template *template.Template
+var runTestTable = []struct {
+	data           map[string]string
+	template       *template.Template
 	expectedOutput []byte
-	execFunc ExecFunc
+	execFunc       ExecFunc
 }{
 	{
 		map[string]string{"key": "value"},
@@ -67,7 +65,7 @@ var runTestTable = []struct{
 func TestPipeRunner_Run(t *testing.T) {
 	for _, tt := range runTestTable {
 		pr := &PipeRunner{
-			Exec: tt.execFunc,
+			Exec:          tt.execFunc,
 			StdinTemplate: tt.template,
 		}
 		out := bytes.NewBuffer([]byte(``))
@@ -82,7 +80,6 @@ func TestPipeRunner_Run(t *testing.T) {
 		}
 	}
 }
-
 
 func TestPipeRunner_Run2(t *testing.T) {
 	for _, tt := range runnerTestTable {
@@ -107,4 +104,3 @@ func TestPipeRunner_Run2(t *testing.T) {
 		}
 	}
 }
-
