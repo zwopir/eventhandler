@@ -102,7 +102,7 @@ func TestPipeRunner_Run2(t *testing.T) {
 
 		if string(b.Bytes()) != tt.data["key"] {
 			t.Errorf("expected %s from running %s, got %s",
-				tt.data["key"], string(b.Bytes()),
+				tt.data["key"], tt.cmdString, string(b.Bytes()),
 			)
 		}
 	}
