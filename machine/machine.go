@@ -1,15 +1,15 @@
 package machine
 
 import (
-	"github.com/nats-io/go-nats"
 	"ehclient/model"
+	"github.com/nats-io/go-nats"
 	"github.com/prometheus/common/log"
 )
 
 type Coordinator struct {
 	messageCh chan *model.Message
-	encConn *nats.EncodedConn
-	done chan struct{}
+	encConn   *nats.EncodedConn
+	done      chan struct{}
 }
 
 func NewCoordinator(encConn *nats.EncodedConn) Coordinator {
@@ -17,8 +17,8 @@ func NewCoordinator(encConn *nats.EncodedConn) Coordinator {
 	done := make(chan struct{})
 	return Coordinator{
 		messageCh: messageCh,
-		encConn: encConn,
-		done: done,
+		encConn:   encConn,
+		done:      done,
 	}
 }
 
@@ -40,11 +40,11 @@ func (c Coordinator) Dispatch(filters model.Filters) {
 			} else {
 				log.Debugf("discarding message %v\n", message)
 			}
-		select {
-		case <- c.done:
-			return
-		default:
-		}
+			select {
+			case <-c.done:
+				return
+			default:
+			}
 		}
 	}()
 }
@@ -55,7 +55,3 @@ func (c Coordinator) Shutdown() {
 	log.Info("shutting down coordinator...")
 	c.encConn.Close()
 }
-
-
-
-

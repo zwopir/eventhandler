@@ -8,9 +8,9 @@ import (
 	testserver "github.com/nats-io/gnatsd/test"
 	"github.com/nats-io/go-nats"
 	"net"
+	"reflect"
 	"testing"
 	"time"
-	"reflect"
 )
 
 var (
@@ -52,9 +52,9 @@ func TestCoordinator_NatsListen(t *testing.T) {
 
 var (
 	dispatchTestTable = []struct {
-		configFilters []config.Filter
-		messagesToDispatch  []*model.Message
-		recvMessages  []*model.Message
+		configFilters      []config.Filter
+		messagesToDispatch []*model.Message
+		recvMessages       []*model.Message
 	}{
 		{
 			[]config.Filter{
@@ -93,11 +93,11 @@ func TestCoordinator_Dispatch(t *testing.T) {
 
 		// collect dispatched messages in a go routine
 		dispatchedMessages := []*model.Message{}
-		go func(){
+		go func() {
 			for m := range coordinator.messageCh {
 				dispatchedMessages = append(dispatchedMessages, m)
 				select {
-				case <- coordinator.done:
+				case <-coordinator.done:
 					return
 				default:
 				}
@@ -111,7 +111,7 @@ func TestCoordinator_Dispatch(t *testing.T) {
 		time.Sleep(time.Second)
 		close(coordinator.done)
 
-		if ! reflect.DeepEqual(dispatchedMessages, tt.recvMessages) {
+		if !reflect.DeepEqual(dispatchedMessages, tt.recvMessages) {
 			t.Errorf("expected the following messages (%v), got (%v)", tt.recvMessages, dispatchedMessages)
 		}
 	}
