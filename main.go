@@ -1,9 +1,9 @@
 package main
 
 import (
-	"ehclient/config"
-	"ehclient/machine"
-	"ehclient/model"
+	"eventhandler/config"
+	"eventhandler/machine"
+	"eventhandler/model"
 	"flag"
 	"fmt"
 	"github.com/nats-io/go-nats"

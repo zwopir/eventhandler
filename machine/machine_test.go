@@ -1,8 +1,8 @@
 package machine
 
 import (
-	"ehclient/config"
-	"ehclient/model"
+	"eventhandler/config"
+	"eventhandler/model"
 	"fmt"
 	"github.com/nats-io/gnatsd/server"
 	testserver "github.com/nats-io/gnatsd/test"
@@ -69,6 +69,7 @@ var (
 			[]*model.Message{
 				{"key_a": "matched123matched"},
 				{"key_a": "whatever"},
+				{"key_b": "doesntmatch"},
 			},
 			[]*model.Message{
 				{"key_a": "matched123matched"},

@@ -1,7 +1,7 @@
 package machine
 
 import (
-	"ehclient/model"
+	"eventhandler/model"
 	"github.com/nats-io/go-nats"
 	"github.com/prometheus/common/log"
 )

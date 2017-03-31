@@ -1,7 +1,7 @@
 package model
 
 import (
-	"ehclient/config"
+	"eventhandler/config"
 	"encoding/json"
 	"regexp"
 )
