@@ -1,8 +1,8 @@
 package model
 
 import (
-	"eventhandler/config"
 	"encoding/json"
+	"eventhandler/config"
 	"regexp"
 )
 

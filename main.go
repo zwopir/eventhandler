@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"eventhandler/config"
 	"eventhandler/machine"
 	"eventhandler/model"
@@ -24,25 +25,28 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	natsEncConn, err := nats.NewEncodedConn(nc, "json")
+	defer nc.Close()
+
+	coordinator, err := machine.NewCoordinator(nc)
 	if err != nil {
 		panic(err)
 	}
-	defer natsEncConn.Close()
-
-	coordinator := machine.NewCoordinator(natsEncConn)
 	err = coordinator.NatsListen(config.Global.Subject)
 	if err != nil {
 		panic(err)
 	}
 
 	for i := 0; i <= 10; i++ {
-		err := natsEncConn.Publish(config.Global.Subject, model.Message{
+		msg, err := json.Marshal(model.Message{
 			"count":      fmt.Sprintf("%d", i),
 			"bla":        "blurks",
 			"hostname":   "localhost",
 			"check_name": "check_foo",
 		})
+		if err != nil {
+			panic(err)
+		}
+		err = nc.Publish(config.Global.Subject, msg)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -52,7 +56,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	coordinator.Dispatch(filters)
+	coordinator.Dispatch(filters, func(v interface{}) error {
+		fmt.Printf("got message (%v)\n", v.(*model.Message))
+		return nil
+	})
 
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt)
