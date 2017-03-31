@@ -18,8 +18,11 @@ var (
 )
 
 func TestNewCoordinator(t *testing.T) {
-	encConn := nats.EncodedConn{}
-	_ = NewCoordinator(&encConn)
+	conn := nats.Conn{}
+	_, err := NewCoordinator(&conn)
+	if err != nil {
+		t.Errorf("failed to construct Coordinator: %s", err)
+	}
 }
 
 func TestCoordinator_NatsListen(t *testing.T) {
@@ -38,12 +41,12 @@ func TestCoordinator_NatsListen(t *testing.T) {
 	if err != nil {
 		t.Errorf("internal test error: %s", err)
 	}
-	natsEncConn, err := nats.NewEncodedConn(nc, "json")
+	defer nc.Close()
+
+	coordinator, err := NewCoordinator(nc)
 	if err != nil {
-		t.Errorf("internal test error: %s", err)
+		t.Errorf("failed to construct Coordinator: %s", err)
 	}
-	defer natsEncConn.Close()
-	coordinator := NewCoordinator(natsEncConn)
 	err = coordinator.NatsListen(subject)
 	if err != nil {
 		t.Errorf("NatsListen returned an error: %s", err)
@@ -77,8 +80,12 @@ var (
 func TestCoordinator_Dispatch(t *testing.T) {
 	for _, tt := range dispatchTestTable {
 		// create a coordinator
-		encConn := nats.EncodedConn{}
-		coordinator := NewCoordinator(&encConn)
+		conn := nats.Conn{}
+		coordinator, err := NewCoordinator(&conn)
+		if err != nil {
+			t.Errorf("failed to construct Coordinator: %s", err)
+			t.Fail()
+		}
 
 		// create test filters
 		filters, err := model.NewFilters(tt.configFilters)
@@ -135,15 +142,16 @@ func TestCoordinator_Shutdown(t *testing.T) {
 	}
 	t.Logf("started test server on nats://%s:%s", host, port)
 
-	nc, err := nats.Connect(fmt.Sprintf("nats://%s:%s", host, port))
+	conn, err := nats.Connect(fmt.Sprintf("nats://%s:%s", host, port))
 	if err != nil {
 		t.Errorf("internal test error: %s", err)
 	}
-	natsEncConn, err := nats.NewEncodedConn(nc, "json")
+
+	coordinator, err := NewCoordinator(conn)
 	if err != nil {
-		t.Errorf("internal test error: %s", err)
+		t.Errorf("failed to construct Coordinator: %s", err)
+		t.Fail()
 	}
-	coordinator := NewCoordinator(natsEncConn)
 	coordinator.Shutdown()
 	time.Sleep(time.Second)
 	err = coordinator.encConn.Publish("failsubject", "whatever")
@@ -152,7 +160,7 @@ func TestCoordinator_Shutdown(t *testing.T) {
 	} else {
 		t.Logf("publishing on a closed connection correctly fails: %s", err)
 	}
-	_, doneNotClosed := <- coordinator.done
+	_, doneNotClosed := <-coordinator.done
 	if doneNotClosed {
 		t.Error("done chan hasn't been closed")
 	}

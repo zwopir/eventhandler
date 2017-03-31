@@ -12,14 +12,18 @@ type Coordinator struct {
 	done      chan struct{}
 }
 
-func NewCoordinator(encConn *nats.EncodedConn) Coordinator {
+func NewCoordinator(conn *nats.Conn) (Coordinator, error) {
 	messageCh := make(chan *model.Message)
 	done := make(chan struct{})
+	encConn, err := nats.NewEncodedConn(conn, "json")
+	if err != nil {
+		return Coordinator{}, err
+	}
 	return Coordinator{
 		messageCh: messageCh,
 		encConn:   encConn,
 		done:      done,
-	}
+	}, nil
 }
 
 func (c Coordinator) NatsListen(subject string) error {
