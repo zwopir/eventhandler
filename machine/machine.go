@@ -32,16 +32,21 @@ func (c Coordinator) NatsListen(subject string) error {
 	return nil
 }
 
-func (c Coordinator) Dispatch(filters model.Filters) {
+func (c Coordinator) Dispatch(filters model.Filters, callback func(interface{}) error) {
 	go func() {
 		for message := range c.messageCh {
 			if filters.MatchAll(message) {
 				log.Debugf("dispatching message %v\n", message)
+				err := callback(message)
+				if err != nil {
+					log.Errorf("callback in dispatcher failed: %s", err)
+				}
 			} else {
 				log.Debugf("discarding message %v\n", message)
 			}
 			select {
 			case <-c.done:
+				log.Info("shutting down dispatcher")
 				return
 			default:
 			}
@@ -54,4 +59,5 @@ func (c Coordinator) Shutdown() {
 	defer close(c.messageCh)
 	log.Info("shutting down coordinator...")
 	c.encConn.Close()
+	c.encConn.Conn.Close()
 }

@@ -65,7 +65,7 @@ var (
 			},
 			[]*model.Message{
 				{"key_a": "matched123matched"},
-				{"key_b": "whatever"},
+				{"key_a": "whatever"},
 			},
 			[]*model.Message{
 				{"key_a": "matched123matched"},
@@ -88,13 +88,19 @@ func TestCoordinator_Dispatch(t *testing.T) {
 				err,
 			)
 		}
+		// create chan to receive messages from dispatcher
+		recv := make(chan *model.Message)
+
 		// start dispatcher
-		coordinator.Dispatch(filters)
+		coordinator.Dispatch(filters, func(message interface{}) error {
+			recv <- message.(*model.Message)
+			return nil
+		})
 
 		// collect dispatched messages in a go routine
 		dispatchedMessages := []*model.Message{}
 		go func() {
-			for m := range coordinator.messageCh {
+			for m := range recv {
 				dispatchedMessages = append(dispatchedMessages, m)
 				select {
 				case <-coordinator.done:
@@ -114,5 +120,36 @@ func TestCoordinator_Dispatch(t *testing.T) {
 		if !reflect.DeepEqual(dispatchedMessages, tt.recvMessages) {
 			t.Errorf("expected the following messages (%v), got (%v)", tt.recvMessages, dispatchedMessages)
 		}
+	}
+}
+
+func TestCoordinator_Shutdown(t *testing.T) {
+	opts := &server.Options{Host: "127.0.0.1", Port: server.RANDOM_PORT}
+	s := testserver.RunServer(opts)
+	defer s.Shutdown()
+
+	addr := s.Addr()
+	host, port, err := net.SplitHostPort(addr.String())
+	if err != nil {
+		t.Fatalf("Expected no error: Got %v\n", err)
+	}
+	t.Logf("started test server on nats://%s:%s", host, port)
+
+	nc, err := nats.Connect(fmt.Sprintf("nats://%s:%s", host, port))
+	if err != nil {
+		t.Errorf("internal test error: %s", err)
+	}
+	natsEncConn, err := nats.NewEncodedConn(nc, "json")
+	if err != nil {
+		t.Errorf("internal test error: %s", err)
+	}
+	coordinator := NewCoordinator(natsEncConn)
+	coordinator.Shutdown()
+	time.Sleep(time.Second)
+	err = coordinator.encConn.Publish("failsubject", "whatever")
+	if err == nil {
+		t.Error("publishing on a closed connection should fail")
+	} else {
+		t.Logf("publishing on a closed connection correctly fails: %s", err)
 	}
 }
