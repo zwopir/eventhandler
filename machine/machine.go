@@ -59,5 +59,4 @@ func (c Coordinator) Shutdown() {
 	defer close(c.messageCh)
 	log.Info("shutting down coordinator...")
 	c.encConn.Close()
-	c.encConn.Conn.Close()
 }

@@ -152,4 +152,8 @@ func TestCoordinator_Shutdown(t *testing.T) {
 	} else {
 		t.Logf("publishing on a closed connection correctly fails: %s", err)
 	}
+	_, doneNotClosed := <- coordinator.done
+	if doneNotClosed {
+		t.Error("done chan hasn't been closed")
+	}
 }
