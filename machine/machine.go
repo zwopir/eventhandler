@@ -36,12 +36,12 @@ func (c Coordinator) NatsListen(subject string) error {
 	return nil
 }
 
-func (c Coordinator) Dispatch(filters model.Filters, callback func(interface{}) error) {
+func (c Coordinator) Dispatch(filters model.Filters, actionFunc func(interface{}) error) {
 	go func() {
 		for message := range c.messageCh {
 			if filters.MatchAll(message) {
 				log.Debugf("dispatching message %v\n", message)
-				err := callback(message)
+				err := actionFunc(message)
 				if err != nil {
 					log.Errorf("callback in dispatcher failed: %s", err)
 				}
