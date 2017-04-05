@@ -11,8 +11,7 @@ type Config struct {
 }
 
 type Global struct {
-	StanAddress string `yaml:"stan_address"`
-	ClientID    string `yaml:"client_id"`
+	NatsAddress string `yaml:"nats_address"`
 	Subject     string `yaml:"subject"`
 }
 
@@ -23,10 +22,13 @@ type Command struct {
 	Filters       []Filter `yaml:"filters"`
 }
 
+
 type Filter struct {
-	SourceField string `yaml:"source_field"`
-	RegexpMatch string `yaml:"regexp_match"`
+	Type string `yaml:"type"`
+	Context string `yaml:"context"`
+	Args map[string]string `yaml:"args"`
 }
+
 
 func FromFile(configFile string) (*Config, error) {
 	var c Config

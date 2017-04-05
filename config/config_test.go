@@ -12,8 +12,7 @@ var configTT = []struct {
 	{"../config_example.yaml",
 		&Config{
 			Global: Global{
-				StanAddress: "localhost:4222",
-				ClientID:    "host.example.com",
+				NatsAddress: "localhost:4222",
 				Subject:     "eventhandler",
 			},
 			Command: Command{
@@ -22,12 +21,28 @@ var configTT = []struct {
 				StdinTemplate: "{{ . | printf %v }}",
 				Filters: []Filter{
 					{
-						SourceField: "hostname",
-						RegexpMatch: "localhost",
+						Context: "payload",
+						Type: "regexp",
+						Args: map[string]string{
+							"field": "check_name",
+							"regexp": "check_.+",
+						},
 					},
 					{
-						SourceField: "check_name",
-						RegexpMatch: "check_.+",
+						Context: "envelope",
+						Type: "regexp",
+						Args: map[string]string{
+							"field": "sender",
+							"regexp": "nagios.example.com",
+						},
+					},
+					{
+						Context: "envelope",
+						Type: "regexp",
+						Args: map[string]string{
+							"field": "recipient",
+							"regexp": "me.example.com",
+						},
 					},
 				},
 			},

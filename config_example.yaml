@@ -1,7 +1,6 @@
 ---
 global:
-  stan_address: "localhost:4222"
-  client_id: "host.example.com"
+  nats_address: "localhost:4222"
   subject: "eventhandler"
 
 command:
@@ -10,7 +9,18 @@ command:
     - "-"
   stdin_template: "{{ . | printf %v }}"
   filters:
-    - source_field: "hostname"
-      regexp_match: "localhost"
-    - source_field: "check_name"
-      regexp_match: "check_.+"
+    - type: regexp
+      context: payload
+      args:
+        field: "check_name"
+        regexp: "check_.+"
+    - type: regexp
+      context: envelope
+      args:
+        field: "sender"
+        regexp: "nagios.example.com"
+    - type: regexp
+      context: envelope
+      args:
+        field: "recipient"
+        regexp: "me.example.com"
