@@ -57,7 +57,7 @@ var (
 	dispatchTestTable = []struct {
 		configFilters      []config.Filter
 		messagesToDispatch []model.Envelope
-		recievedMessages   []model.Envelope
+		receivedMessages   []model.Envelope
 	}{
 		{
 			[]config.Filter{
@@ -175,8 +175,8 @@ func TestCoordinator_Dispatch(t *testing.T) {
 		time.Sleep(time.Second)
 		close(coordinator.done)
 
-		if !reflect.DeepEqual(dispatchedMessages, tt.recievedMessages) {
-			t.Errorf("expected the following messages %v, got %v", tt.recievedMessages, dispatchedMessages)
+		if !reflect.DeepEqual(dispatchedMessages, tt.receivedMessages) {
+			t.Errorf("expected the following messages %v, got %v", tt.receivedMessages, dispatchedMessages)
 		}
 	}
 }
