@@ -56,23 +56,67 @@ func TestCoordinator_NatsListen(t *testing.T) {
 var (
 	dispatchTestTable = []struct {
 		configFilters      []config.Filter
-		messagesToDispatch []*model.Message
-		recvMessages       []*model.Message
+		messagesToDispatch []model.Envelope
+		recievedMessages   []model.Envelope
 	}{
 		{
 			[]config.Filter{
 				{
-					SourceField: "key_a",
-					RegexpMatch: ".+123.+",
+					Context: "payload",
+					Type:    "regexp",
+					Args: map[string]string{
+						"field":  "check_name",
+						"regexp": "check_.+",
+					},
+				},
+				{
+					Context: "envelope",
+					Type:    "regexp",
+					Args: map[string]string{
+						"field":  "sender",
+						"regexp": "testS.+",
+					},
 				},
 			},
-			[]*model.Message{
-				{"key_a": "matched123matched"},
-				{"key_a": "whatever"},
-				{"key_b": "doesntmatch"},
+			[]model.Envelope{
+				{
+					[]byte(`testSender`),
+					[]byte(`testRecipient`),
+					[]byte(`{"check_name":"check_foo"}`),
+					[]byte(`testSignature`),
+				},
+				{
+					[]byte(`testSender`),
+					[]byte(`testRecipient`),
+					[]byte(`{"check_name":"not_gonna_match"}`),
+					[]byte(`testSignature`),
+				},
+				{
+					[]byte(`anotherSender`),
+					[]byte(`testRecipient`),
+					[]byte(`{"check_name":"check_foo"}`),
+					[]byte(`testSignature`),
+				},
+				{
+					[]byte(`testSammy`),
+					[]byte(`testRecipient`),
+					[]byte(`{"check_name":"check_foo"}`),
+					[]byte(`testSignature`),
+				},
 			},
-			[]*model.Message{
-				{"key_a": "matched123matched"},
+			[]model.Envelope{
+				{
+					[]byte(`testSender`),
+					[]byte(`testRecipient`),
+					[]byte(`{"check_name":"check_foo"}`),
+					[]byte(`testSignature`),
+				},
+				{
+					[]byte(`testSammy`),
+					[]byte(`testRecipient`),
+					[]byte(`{"check_name":"check_foo"}`),
+					[]byte(`testSignature`),
+				},
 			},
 		},
 	}
@@ -89,24 +133,29 @@ func TestCoordinator_Dispatch(t *testing.T) {
 		}
 
 		// create test filters
-		filters, err := model.NewFilters(tt.configFilters)
+		filters, err := model.NewFiltererFromConfig(tt.configFilters)
 		if err != nil {
 			t.Errorf("failed to create filter for %v (%s)",
 				tt.configFilters,
 				err,
 			)
+			t.Fail()
 		}
 		// create chan to receive messages from dispatcher
-		recv := make(chan *model.Message)
+		recv := make(chan model.Envelope)
 
 		// start dispatcher
 		coordinator.Dispatch(filters, func(message interface{}) error {
-			recv <- message.(*model.Message)
+			msg, ok := message.(model.Envelope)
+			if !ok {
+				t.Error("assertion failed")
+			}
+			recv <- msg
 			return nil
 		})
 
 		// collect dispatched messages in a go routine
-		dispatchedMessages := []*model.Message{}
+		dispatchedMessages := []model.Envelope{}
 		go func() {
 			for m := range recv {
 				dispatchedMessages = append(dispatchedMessages, m)
@@ -118,15 +167,16 @@ func TestCoordinator_Dispatch(t *testing.T) {
 			}
 		}()
 
-		// send test messages to
+		// send test messages to coordinator message chan
 		for _, messageToDispatch := range tt.messagesToDispatch {
-			coordinator.messageCh <- messageToDispatch
+			t.Logf("sending %v to message channel", messageToDispatch)
+			coordinator.envelopeCh <- messageToDispatch
 		}
 		time.Sleep(time.Second)
 		close(coordinator.done)
 
-		if !reflect.DeepEqual(dispatchedMessages, tt.recvMessages) {
-			t.Errorf("expected the following messages (%v), got (%v)", tt.recvMessages, dispatchedMessages)
+		if !reflect.DeepEqual(dispatchedMessages, tt.recievedMessages) {
+			t.Errorf("expected the following messages %v, got %v", tt.recievedMessages, dispatchedMessages)
 		}
 	}
 }
@@ -155,7 +205,13 @@ func TestCoordinator_Shutdown(t *testing.T) {
 	}
 	coordinator.Shutdown()
 	time.Sleep(time.Second)
-	err = coordinator.encConn.Publish("failsubject", "whatever")
+	testmessage := &model.Envelope{
+		Sender:    []byte("testSender"),
+		Recipient: []byte("testRecipient"),
+		Payload:   []byte(`testPayload`),
+		Signature: []byte(`testSignature`),
+	}
+	err = coordinator.encConn.Publish("failsubject", testmessage)
 	if err == nil {
 		t.Error("publishing on a closed connection should fail")
 	} else {
