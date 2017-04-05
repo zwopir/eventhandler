@@ -22,25 +22,25 @@ var configTT = []struct {
 				Filters: []Filter{
 					{
 						Context: "payload",
-						Type: "regexp",
+						Type:    "regexp",
 						Args: map[string]string{
-							"field": "check_name",
+							"field":  "check_name",
 							"regexp": "check_.+",
 						},
 					},
 					{
 						Context: "envelope",
-						Type: "regexp",
+						Type:    "regexp",
 						Args: map[string]string{
-							"field": "sender",
+							"field":  "sender",
 							"regexp": "nagios.example.com",
 						},
 					},
 					{
 						Context: "envelope",
-						Type: "regexp",
+						Type:    "regexp",
 						Args: map[string]string{
-							"field": "recipient",
+							"field":  "recipient",
 							"regexp": "me.example.com",
 						},
 					},

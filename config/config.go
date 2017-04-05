@@ -22,13 +22,11 @@ type Command struct {
 	Filters       []Filter `yaml:"filters"`
 }
 
-
 type Filter struct {
-	Type string `yaml:"type"`
-	Context string `yaml:"context"`
-	Args map[string]string `yaml:"args"`
+	Type    string            `yaml:"type"`
+	Context string            `yaml:"context"`
+	Args    map[string]string `yaml:"args"`
 }
-
 
 func FromFile(configFile string) (*Config, error) {
 	var c Config

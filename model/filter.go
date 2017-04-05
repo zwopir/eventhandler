@@ -1,25 +1,24 @@
 package model
 
 import (
-	"regexp"
-	"eventhandler/config"
 	"encoding/json"
-	"fmt"
 	"errors"
+	"eventhandler/config"
+	"fmt"
+	"regexp"
 )
 
 var (
 	RetrieverMissingFieldError error = errors.New("failed to retrieve value from interface")
 )
 
-
-type Filterer interface{
+type Filterer interface {
 	Match(interface{}) (bool, error)
 }
 
 type FilterBattery []Filterer
 
-func newFilters(filters ...Filterer) FilterBattery {
+func newFilterBattery(filters ...Filterer) FilterBattery {
 	ret := FilterBattery{}
 	for _, f := range filters {
 		ret = append(ret, f)
@@ -35,7 +34,7 @@ func (f FilterBattery) Match(v interface{}) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		if ! matched {
+		if !matched {
 			return false, nil
 		}
 	}
@@ -44,7 +43,7 @@ func (f FilterBattery) Match(v interface{}) (bool, error) {
 
 // basicFilter is an unexported basic type that implements the Filterer interface
 // its Match method returns the result of the evaluated embedded match function
-type basicFilter struct{
+type basicFilter struct {
 	matchFunc func(interface{}) (bool, error)
 }
 
@@ -61,15 +60,16 @@ func newFilter(f func(interface{}) (bool, error)) basicFilter {
 }
 
 // retriever retries a value to be filtered by a Filterer
-type retriever interface{
+type retriever interface {
 	getValue(v interface{}) ([]byte, error)
 }
 
 // envelopeValueRetriever retrieves a value from an envelope struct field
-type envelopeValueRetriever struct{
+type envelopeValueRetriever struct {
 	field string
 }
 
+// getValue implements the retriever interface
 func (r envelopeValueRetriever) getValue(v interface{}) ([]byte, error) {
 	e, ok := v.(Envelope)
 	if !ok {
@@ -89,20 +89,25 @@ func (r envelopeValueRetriever) getValue(v interface{}) ([]byte, error) {
 	}
 }
 
+// newEnvelopValueRetriever returns a new envelopeValueRetriever
 func newEnvelopeValueRetriever(field string) envelopeValueRetriever {
 	return envelopeValueRetriever{
 		field: field,
 	}
 }
 
-type payloadMessageKeyRetriever struct{
+// payloadMessageKeyRetriever retrieves a value from the envelope's payload
+// it is assumed that the payload is marshalable to a map[string]string
+type payloadMessageKeyRetriever struct {
 	key string
 }
 
-func newPayloadMessageKeyRetriever(key string) payloadMessageKeyRetriever {
+// newPayloadMessageValueRetriever returns a new payloadMessageKeyRetriever
+func newPayloadMessageValueRetriever(key string) payloadMessageKeyRetriever {
 	return payloadMessageKeyRetriever{key: key}
 }
 
+// getValue implements the retriever interface
 func (p payloadMessageKeyRetriever) getValue(v interface{}) ([]byte, error) {
 	e, ok := v.(Envelope)
 	if !ok {
@@ -119,7 +124,8 @@ func (p payloadMessageKeyRetriever) getValue(v interface{}) ([]byte, error) {
 	return nil, RetrieverMissingFieldError
 }
 
-
+// newRegexpFilterer returns a filterer that implements the filterer interface
+// it retrieves the value with the provided retriever and matches it against the provided regexp
 func newRegexpFilterer(retriever retriever, regexp *regexp.Regexp) (Filterer, error) {
 	filterer := newFilter(
 		func(v interface{}) (bool, error) {
@@ -138,6 +144,8 @@ func newRegexpFilterer(retriever retriever, regexp *regexp.Regexp) (Filterer, er
 	return filterer, nil
 }
 
+// NewFiltererFromConfig returns a filterBattery, implementing the Filterer interface
+// The basic filterer and retriever are chosen on the provided filter config
 func NewFiltererFromConfig(configFilters []config.Filter) (Filterer, error) {
 	var (
 		retriever retriever
@@ -153,7 +161,7 @@ func NewFiltererFromConfig(configFilters []config.Filter) (Filterer, error) {
 		}
 		switch cf.Context {
 		case "payload":
-			retriever = newPayloadMessageKeyRetriever(field)
+			retriever = newPayloadMessageValueRetriever(field)
 		case "envelope":
 			retriever = newEnvelopeValueRetriever(field)
 		default:
@@ -175,7 +183,7 @@ func NewFiltererFromConfig(configFilters []config.Filter) (Filterer, error) {
 		}
 		filters = append(filters, matcher)
 	}
-	return newFilters(filters...), nil
+	return newFilterBattery(filters...), nil
 }
 
 /*
@@ -183,5 +191,3 @@ func newSignatureFilterer() (Filterer, error) {
 
 }
 */
-
-

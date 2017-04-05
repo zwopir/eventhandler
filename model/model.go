@@ -2,7 +2,6 @@ package model
 
 import (
 	"encoding/json"
-
 )
 
 type Message map[string]string
