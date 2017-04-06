@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"eventhandler/config"
 	"eventhandler/machine"
 	"eventhandler/model"
@@ -10,6 +9,8 @@ import (
 	"github.com/nats-io/go-nats"
 	"os"
 	"os/signal"
+	"github.com/prometheus/common/log"
+	"github.com/nats-io/go-nats/encoders/protobuf"
 )
 
 func main() {
@@ -36,28 +37,37 @@ func main() {
 		panic(err)
 	}
 
+	encConn, err := nats.NewEncodedConn(nc, protobuf.PROTOBUF_ENCODER)
 	for i := 0; i <= 10; i++ {
-		msg, err := json.Marshal(model.Message{
-			"count":      fmt.Sprintf("%d", i),
-			"bla":        "blurks",
-			"hostname":   "localhost",
-			"check_name": "check_foo",
-		})
-		if err != nil {
-			panic(err)
-		}
-		err = nc.Publish(config.Global.Subject, msg)
+		msg := &model.Envelope{
+				[]byte(`nagios.example.com`),
+				[]byte(`me.example.com`),
+				[]byte(`{"check_name":"check_foo"}`),
+				[]byte(`testSignature`),
+			}
+		log.Infof("sending message %s", msg.String())
+		err = encConn.Publish(config.Global.Subject, msg)
 		if err != nil {
 			fmt.Println(err)
 		}
 	}
 
-	filters, err := model.NewFilters(config.Command.Filters)
+	filters, err := model.NewFiltererFromConfig(config.Command.Filters)
 	if err != nil {
 		panic(err)
 	}
 	coordinator.Dispatch(filters, func(v interface{}) error {
-		fmt.Printf("got message (%v)\n", v.(*model.Message))
+		/*msg := model.Envelope{}
+		b, _ := v.([]byte)
+		err := proto.Unmarshal(b, &msg)
+		if err != nil {
+			log.Warn(err)
+		}*/
+		msg, ok := v.(model.Envelope)
+		if !ok {
+			log.Error("failed to type assert protobuf message to envelope")
+		}
+		fmt.Printf("got message %s\n", msg)
 		return nil
 	})
 
