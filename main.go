@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"github.com/prometheus/common/log"
 	"github.com/nats-io/go-nats/encoders/protobuf"
+	"errors"
 )
 
 func main() {
@@ -57,15 +58,9 @@ func main() {
 		panic(err)
 	}
 	coordinator.Dispatch(filters, func(v interface{}) error {
-		/*msg := model.Envelope{}
-		b, _ := v.([]byte)
-		err := proto.Unmarshal(b, &msg)
-		if err != nil {
-			log.Warn(err)
-		}*/
 		msg, ok := v.(model.Envelope)
 		if !ok {
-			log.Error("failed to type assert protobuf message to envelope")
+			return errors.New("failed to type assert protobuf message to envelope")
 		}
 		fmt.Printf("got message %s\n", msg)
 		return nil
