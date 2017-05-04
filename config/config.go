@@ -11,8 +11,8 @@ type Config struct {
 }
 
 type Global struct {
-	NatsAddress string `yaml:"nats_address"`
 	Subject     string `yaml:"subject"`
+	NatsAddress string `yaml:"natsaddress"`
 }
 
 type Command struct {

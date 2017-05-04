@@ -1,6 +1,6 @@
 ---
 global:
-  nats_address: "localhost:4222"
+  natsaddress: "nats://127.0.0.1:4222"
   subject: "eventhandler"
 
 command:
