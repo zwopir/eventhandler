@@ -27,7 +27,7 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		nc, err := nats.Connect(cfg.Global.NatsAddress)
 		if err != nil {
-			panic(err)
+			log.Fatalf("can't connect to nats server at %s: %s", cfg.Global.NatsAddress, err)
 		}
 		defer nc.Close()
 

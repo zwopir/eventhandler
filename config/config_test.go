@@ -12,7 +12,7 @@ var configTT = []struct {
 	{"../config_example.yaml",
 		&Config{
 			Global: Global{
-				NatsAddress: "localhost:4222",
+				NatsAddress: "nats://127.0.0.1:4222",
 				Subject:     "eventhandler",
 			},
 			Command: Command{

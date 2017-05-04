@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/prometheus/common/log"
+	"flag"
+	"github.com/spf13/pflag"
 )
 
 var (
@@ -41,33 +43,34 @@ func Execute() {
 }
 
 func init() {
+	// add go flags to pflag
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	cobra.OnInitialize(initConfig)
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports Persistent Flags, which, if defined here,
 	// will be global for your application.
-
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/config.yaml)")
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	if cfgFile != "" { // enable ability to specify config file via flag
-		viper.SetConfigFile(cfgFile)
-	}
-
 	viper.SetConfigName("config") // name of config file (without extension)
 	viper.AddConfigPath("$HOME")  // adding home directory as first search path
 	viper.AddConfigPath("/etc/eventhandler")
 	viper.AutomaticEnv() // read in environment variables that match
 
+	if cfgFile != "" { // enable ability to specify config file via flag
+		viper.SetConfigFile(cfgFile)
+		log.Infof("using config file %s", cfgFile)
+	}
+
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		log.Infof("Using config file:", viper.ConfigFileUsed())
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("can't read config from config file %s: %s", viper.ConfigFileUsed(), err)
 	}
 	err := viper.Unmarshal(&cfg)
 	if err != nil {
-		panic(err)
+		log.Fatal(err.Error())
 	}
-	fmt.Printf("FOOOO cfg: %v", cfg)
 }
