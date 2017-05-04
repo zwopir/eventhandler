@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 
 	"eventhandler/machine"
 	"eventhandler/model"

@@ -8,14 +8,14 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/prometheus/common/log"
 	"flag"
+	"github.com/prometheus/common/log"
 	"github.com/spf13/pflag"
 )
 
 var (
 	cfgFile string
-	cfg config.Config
+	cfg     config.Config
 )
 
 // RootCmd represents the base command when called without any subcommands
