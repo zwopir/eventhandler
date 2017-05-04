@@ -7,7 +7,6 @@ import (
 	"eventhandler/machine"
 	"eventhandler/model"
 	"github.com/nats-io/go-nats"
-	"github.com/nats-io/go-nats/encoders/protobuf"
 	"github.com/prometheus/common/log"
 	"github.com/spf13/cobra"
 	"os"
@@ -38,21 +37,6 @@ to quickly create a Cobra application.`,
 		err = coordinator.NatsListen(cfg.Global.Subject)
 		if err != nil {
 			panic(err)
-		}
-
-		encConn, err := nats.NewEncodedConn(nc, protobuf.PROTOBUF_ENCODER)
-		for i := 0; i <= 10; i++ {
-			msg := &model.Envelope{
-				[]byte(`nagios.example.com`),
-				[]byte(`me.example.com`),
-				[]byte(`{"check_name":"check_foo"}`),
-				[]byte(`testSignature`),
-			}
-			log.Infof("sending message %s", msg.String())
-			err = encConn.Publish(cfg.Global.Subject, msg)
-			if err != nil {
-				fmt.Println(err)
-			}
 		}
 
 		filters, err := model.NewFiltererFromConfig(cfg.Command.Filters)
