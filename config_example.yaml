@@ -24,7 +24,4 @@ command:
       args:
         field: "recipient"
         regexp: "me.example.com"
-    - type: replay
-      context: last_received
-      args:
-        blackout: 5s
+  blackout: 5s

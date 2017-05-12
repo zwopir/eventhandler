@@ -5,8 +5,8 @@ import (
 	"errors"
 	"eventhandler/config"
 	"fmt"
-	"regexp"
 	"github.com/prometheus/common/log"
+	"regexp"
 )
 
 var (

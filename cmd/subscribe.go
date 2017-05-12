@@ -30,18 +30,18 @@ to quickly create a Cobra application.`,
 		}
 		defer nc.Close()
 
-		coordinator, err := machine.NewCoordinator(nc)
+		coordinator, err := machine.NewCoordinator(nc, cfg.Command.Blackout)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		err = coordinator.NatsListen(cfg.Global.Subject)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 
 		filters, err := model.NewFiltererFromConfig(cfg.Command.Filters)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		coordinator.Dispatch(filters, func(v interface{}) error {
 			msg, ok := v.(model.Envelope)
