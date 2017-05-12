@@ -52,8 +52,8 @@ func (f basicFilter) Match(v interface{}) (bool, error) {
 	return f.matchFunc(v)
 }
 
-// newFilter returns a filterer based on the provided func
-func newFilter(f func(interface{}) (bool, error)) basicFilter {
+// newBasicFilter returns a basicFilter based on the provided func
+func newBasicFilter(f func(interface{}) (bool, error)) basicFilter {
 	return basicFilter{
 		matchFunc: f,
 	}
@@ -127,7 +127,7 @@ func (p payloadMessageKeyRetriever) getValue(v interface{}) ([]byte, error) {
 // newRegexpFilterer returns a filterer that implements the filterer interface
 // it retrieves the value with the provided retriever and matches it against the provided regexp
 func newRegexpFilterer(retriever retriever, regexp *regexp.Regexp) (Filterer, error) {
-	filterer := newFilter(
+	filterer := newBasicFilter(
 		func(v interface{}) (bool, error) {
 			valueToCompare, err := retriever.getValue(v)
 			// consider match tries on a non existent field as a non-match
