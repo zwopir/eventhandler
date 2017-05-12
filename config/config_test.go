@@ -45,6 +45,7 @@ var configTT = []struct {
 						},
 					},
 				},
+				Blackout: "5s",
 			},
 		},
 	},

@@ -20,6 +20,7 @@ type Command struct {
 	CmdArgs       []string `yaml:"cmd_args"`
 	StdinTemplate string   `yaml:"stdin_template"`
 	Filters       []Filter `yaml:"filters"`
+	Blackout      string   `yaml:"blackout"`
 }
 
 type Filter struct {

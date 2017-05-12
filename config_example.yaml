@@ -24,3 +24,4 @@ command:
       args:
         field: "recipient"
         regexp: "me.example.com"
+  blackout: 5s

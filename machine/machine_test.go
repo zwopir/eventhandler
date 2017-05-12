@@ -19,7 +19,7 @@ var (
 
 func TestNewCoordinator(t *testing.T) {
 	conn := nats.Conn{}
-	_, err := NewCoordinator(&conn)
+	_, err := NewCoordinator(&conn, "1h")
 	if err != nil {
 		t.Errorf("failed to construct Coordinator: %s", err)
 	}
@@ -43,7 +43,7 @@ func TestCoordinator_NatsListen(t *testing.T) {
 	}
 	defer nc.Close()
 
-	coordinator, err := NewCoordinator(nc)
+	coordinator, err := NewCoordinator(nc, "1h")
 	if err != nil {
 		t.Errorf("failed to construct Coordinator: %s", err)
 	}
@@ -53,12 +53,14 @@ func TestCoordinator_NatsListen(t *testing.T) {
 	}
 }
 
+type dispatchTestTableType []struct {
+	configFilters      []config.Filter
+	messagesToDispatch []model.Envelope
+	receivedMessages   []model.Envelope
+}
+
 var (
-	dispatchTestTable = []struct {
-		configFilters      []config.Filter
-		messagesToDispatch []model.Envelope
-		receivedMessages   []model.Envelope
-	}{
+	dispatchTestTable = dispatchTestTableType{
 		{
 			[]config.Filter{
 				{
@@ -123,10 +125,84 @@ var (
 )
 
 func TestCoordinator_Dispatch(t *testing.T) {
+	testCoordinatorDispatch(
+		t,
+		dispatchTestTable,
+		5*time.Millisecond,
+		"0s",
+	)
+}
+
+var (
+	dispatchBlackoutTestTable = dispatchTestTableType{
+		{
+			[]config.Filter{
+				{
+					Context: "payload",
+					Type:    "regexp",
+					Args: map[string]string{
+						"field":  "check_name",
+						"regexp": "check_.+",
+					},
+				},
+			},
+			[]model.Envelope{
+				{
+					[]byte(`testSender`),
+					[]byte(`testRecipient`),
+					[]byte(`{"check_name":"check_foo1"}`),
+					[]byte(`testSignature`),
+				},
+				{
+					[]byte(`testSender`),
+					[]byte(`testRecipient`),
+					[]byte(`{"check_name":"check_foo2"}`),
+					[]byte(`testSignature`),
+				},
+				{
+					[]byte(`testSender`),
+					[]byte(`testRecipient`),
+					[]byte(`{"check_name":"check_foo3"}`),
+					[]byte(`testSignature`),
+				},
+			},
+			[]model.Envelope{
+				{
+					[]byte(`testSender`),
+					[]byte(`testRecipient`),
+					[]byte(`{"check_name":"check_foo1"}`),
+					[]byte(`testSignature`),
+				},
+				{
+					[]byte(`testSender`),
+					[]byte(`testRecipient`),
+					[]byte(`{"check_name":"check_foo3"}`),
+					[]byte(`testSignature`),
+				},
+			},
+		},
+	}
+)
+
+func TestCoordinator_Dispatch2(t *testing.T) {
+	testCoordinatorDispatch(
+		t,
+		dispatchBlackoutTestTable,
+		1500*time.Millisecond,
+		"2000ms",
+	)
+}
+
+func testCoordinatorDispatch(
+	t *testing.T,
+	dispatchTestTable dispatchTestTableType,
+	sleep time.Duration,
+	blackout string,
+) {
 	for _, tt := range dispatchTestTable {
 		// create a coordinator
 		conn := nats.Conn{}
-		coordinator, err := NewCoordinator(&conn)
+		coordinator, err := NewCoordinator(&conn, blackout)
 		if err != nil {
 			t.Errorf("failed to construct Coordinator: %s", err)
 			t.Fail()
@@ -169,14 +245,15 @@ func TestCoordinator_Dispatch(t *testing.T) {
 
 		// send test messages to coordinator message chan
 		for _, messageToDispatch := range tt.messagesToDispatch {
-			t.Logf("sending %v to message channel", messageToDispatch)
+			t.Logf("sending %s to message channel", messageToDispatch)
 			coordinator.envelopeCh <- messageToDispatch
+			time.Sleep(sleep)
 		}
-		time.Sleep(time.Second)
+		time.Sleep(2 * time.Second)
 		close(coordinator.done)
 
 		if !reflect.DeepEqual(dispatchedMessages, tt.receivedMessages) {
-			t.Errorf("expected the following messages %v, got %v", tt.receivedMessages, dispatchedMessages)
+			t.Errorf("expected the following messages %s, got %s", tt.receivedMessages, dispatchedMessages)
 		}
 	}
 }
@@ -198,7 +275,7 @@ func TestCoordinator_Shutdown(t *testing.T) {
 		t.Errorf("internal test error: %s", err)
 	}
 
-	coordinator, err := NewCoordinator(conn)
+	coordinator, err := NewCoordinator(conn, "1h")
 	if err != nil {
 		t.Errorf("failed to construct Coordinator: %s", err)
 		t.Fail()

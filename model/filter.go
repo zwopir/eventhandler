@@ -5,6 +5,7 @@ import (
 	"errors"
 	"eventhandler/config"
 	"fmt"
+	"github.com/prometheus/common/log"
 	"regexp"
 )
 
@@ -52,8 +53,8 @@ func (f basicFilter) Match(v interface{}) (bool, error) {
 	return f.matchFunc(v)
 }
 
-// newFilter returns a filterer based on the provided func
-func newFilter(f func(interface{}) (bool, error)) basicFilter {
+// newBasicFilter returns a basicFilter based on the provided func
+func newBasicFilter(f func(interface{}) (bool, error)) basicFilter {
 	return basicFilter{
 		matchFunc: f,
 	}
@@ -127,7 +128,7 @@ func (p payloadMessageKeyRetriever) getValue(v interface{}) ([]byte, error) {
 // newRegexpFilterer returns a filterer that implements the filterer interface
 // it retrieves the value with the provided retriever and matches it against the provided regexp
 func newRegexpFilterer(retriever retriever, regexp *regexp.Regexp) (Filterer, error) {
-	filterer := newFilter(
+	filterer := newBasicFilter(
 		func(v interface{}) (bool, error) {
 			valueToCompare, err := retriever.getValue(v)
 			// consider match tries on a non existent field as a non-match
@@ -145,7 +146,7 @@ func newRegexpFilterer(retriever retriever, regexp *regexp.Regexp) (Filterer, er
 }
 
 // NewFiltererFromConfig returns a filterBattery, implementing the Filterer interface
-// The basic filterer and retriever are chosen on the provided filter config
+// The basic filterer and retriever are chosen based on the provided filter config
 func NewFiltererFromConfig(configFilters []config.Filter) (Filterer, error) {
 	var (
 		retriever retriever
@@ -155,33 +156,40 @@ func NewFiltererFromConfig(configFilters []config.Filter) (Filterer, error) {
 	)
 	filters := []Filterer{}
 	for _, cf := range configFilters {
-		field, found := cf.Args["field"]
-		if !found {
-			return nil, errors.New("mandatory argument 'field' not found in filter configuration.")
-		}
 		switch cf.Context {
 		case "payload":
+			field, found := cf.Args["field"]
+			if !found {
+				return nil, errors.New("mandatory argument 'field' not found in filter configuration.")
+			}
 			retriever = newPayloadMessageValueRetriever(field)
 		case "envelope":
+			field, found := cf.Args["field"]
+			if !found {
+				return nil, errors.New("mandatory argument 'field' not found in filter configuration.")
+			}
 			retriever = newEnvelopeValueRetriever(field)
 		default:
-			return nil, fmt.Errorf("basicFilter context %s is not supported", cf.Context)
-		}
-		regexpString, found := cf.Args["regexp"]
-		if !found {
-			return nil, errors.New("mandatory argument 'regexp' not found in filter configuration")
+			log.Warnf("filter context %s is not supported", cf.Context)
 		}
 		switch cf.Type {
 		case "regexp":
+			regexpString, found := cf.Args["regexp"]
+			if !found {
+				return nil, errors.New("mandatory argument 'regexp' not found in filter configuration")
+			}
 			re, err = regexp.Compile(regexpString)
 			if err != nil {
 				return nil, err
 			}
 			matcher, err = newRegexpFilterer(retriever, re)
 		default:
-			return nil, fmt.Errorf("basicFilter type %s is not supported", cf.Type)
+			log.Warnf("filter type %s is not implemented", cf.Type)
 		}
 		filters = append(filters, matcher)
+	}
+	if len(filters) < 1 {
+		return nil, errors.New("filter battery contains no filter")
 	}
 	return newFilterBattery(filters...), nil
 }
