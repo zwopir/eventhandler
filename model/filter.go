@@ -6,6 +6,7 @@ import (
 	"eventhandler/config"
 	"fmt"
 	"regexp"
+	"github.com/prometheus/common/log"
 )
 
 var (
@@ -145,7 +146,7 @@ func newRegexpFilterer(retriever retriever, regexp *regexp.Regexp) (Filterer, er
 }
 
 // NewFiltererFromConfig returns a filterBattery, implementing the Filterer interface
-// The basic filterer and retriever are chosen on the provided filter config
+// The basic filterer and retriever are chosen based on the provided filter config
 func NewFiltererFromConfig(configFilters []config.Filter) (Filterer, error) {
 	var (
 		retriever retriever
@@ -155,33 +156,40 @@ func NewFiltererFromConfig(configFilters []config.Filter) (Filterer, error) {
 	)
 	filters := []Filterer{}
 	for _, cf := range configFilters {
-		field, found := cf.Args["field"]
-		if !found {
-			return nil, errors.New("mandatory argument 'field' not found in filter configuration.")
-		}
 		switch cf.Context {
 		case "payload":
+			field, found := cf.Args["field"]
+			if !found {
+				return nil, errors.New("mandatory argument 'field' not found in filter configuration.")
+			}
 			retriever = newPayloadMessageValueRetriever(field)
 		case "envelope":
+			field, found := cf.Args["field"]
+			if !found {
+				return nil, errors.New("mandatory argument 'field' not found in filter configuration.")
+			}
 			retriever = newEnvelopeValueRetriever(field)
 		default:
-			return nil, fmt.Errorf("basicFilter context %s is not supported", cf.Context)
-		}
-		regexpString, found := cf.Args["regexp"]
-		if !found {
-			return nil, errors.New("mandatory argument 'regexp' not found in filter configuration")
+			log.Warnf("filter context %s is not supported", cf.Context)
 		}
 		switch cf.Type {
 		case "regexp":
+			regexpString, found := cf.Args["regexp"]
+			if !found {
+				return nil, errors.New("mandatory argument 'regexp' not found in filter configuration")
+			}
 			re, err = regexp.Compile(regexpString)
 			if err != nil {
 				return nil, err
 			}
 			matcher, err = newRegexpFilterer(retriever, re)
 		default:
-			return nil, fmt.Errorf("basicFilter type %s is not supported", cf.Type)
+			log.Warnf("filter type %s is not implemented", cf.Type)
 		}
 		filters = append(filters, matcher)
+	}
+	if len(filters) < 1 {
+		return nil, errors.New("filter battery contains no filter")
 	}
 	return newFilterBattery(filters...), nil
 }

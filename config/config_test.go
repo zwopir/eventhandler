@@ -44,6 +44,13 @@ var configTT = []struct {
 							"regexp": "me.example.com",
 						},
 					},
+					{
+						Context: "last_received",
+						Type: "replay",
+						Args: map[string]string{
+							"blackout": "5s",
+						},
+					},
 				},
 			},
 		},
