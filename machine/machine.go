@@ -26,7 +26,7 @@ func NewCoordinator(conn *nats.Conn, blackout string) (Coordinator, error) {
 	}
 	bo, err := time.ParseDuration(blackout)
 	if err != nil {
-		return Coordinator{}, fmt.Errorf("failded to initialize coordinator: %s", err)
+		return Coordinator{}, fmt.Errorf("failed to initialize coordinator: %s", err)
 	}
 	return Coordinator{
 		envelopeCh: envelopeCh,
