@@ -7,6 +7,7 @@ import (
 	"io"
 	"testing"
 	"text/template"
+	"time"
 )
 
 func createTestTemplate() *template.Template {
@@ -35,6 +36,7 @@ func TestNewPipeRunner(t *testing.T) {
 			context.Background(),
 			tt.cmdString,
 			tt.args,
+			5*time.Second,
 			tt.template,
 		)
 	}
@@ -68,7 +70,7 @@ func TestPipeRunner_Run(t *testing.T) {
 			Exec:          tt.execFunc,
 			StdinTemplate: tt.template,
 		}
-		out := bytes.NewBuffer([]byte(``))
+		out := new(bytes.Buffer)
 		err := pr.Run(tt.data, out)
 		if err != nil {
 			t.Errorf("running mock exec func returned an error: %s", err)
@@ -87,9 +89,10 @@ func TestPipeRunner_Run2(t *testing.T) {
 			context.Background(),
 			tt.cmdString,
 			tt.args,
+			5*time.Second,
 			tt.template,
 		)
-		b := bytes.NewBuffer([]byte(``))
+		b := new(bytes.Buffer)
 		err := pr.Run(tt.data, b)
 		if err != nil {
 			t.Errorf("running %s returned an error: %s",

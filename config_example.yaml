@@ -4,10 +4,11 @@ global:
   subject: "eventhandler"
 
 command:
-  cmd: "cat"
-  cmd_args:
+  cmd: "/bin/cat"
+  cmdargs:
     - "-"
-  stdin_template: "{{ . | printf %v }}"
+  timeout: "2s"
+  stdintemplate: '{{ . | printf "%v" }}'
   filters:
     - type: regexp
       context: payload

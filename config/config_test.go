@@ -16,9 +16,9 @@ var configTT = []struct {
 				Subject:     "eventhandler",
 			},
 			Command: Command{
-				Cmd:           "cat",
+				Cmd:           "/bin/cat",
 				CmdArgs:       []string{"-"},
-				StdinTemplate: "{{ . | printf %v }}",
+				StdinTemplate: "{{ . | printf \"%v\" }}",
 				Filters: []Filter{
 					{
 						Context: "payload",
@@ -45,7 +45,9 @@ var configTT = []struct {
 						},
 					},
 				},
-				Blackout: "5s",
+				Blackout:      "5s",
+				MaxDispatches: 3,
+				Timeout:       "2s",
 			},
 		},
 	},
