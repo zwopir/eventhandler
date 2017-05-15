@@ -21,7 +21,7 @@ type Command struct {
 	StdinTemplate string   `yaml:"stdin_template"`
 	Filters       []Filter `yaml:"filters"`
 	Blackout      string   `yaml:"blackout"`
-	MaxDispatches int64    `yaml:"max_dispatches"`
+	MaxDispatches int64    `yaml:"maxdispatches"`
 }
 
 type Filter struct {

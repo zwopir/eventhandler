@@ -55,6 +55,7 @@ func (c Coordinator) NatsListen(subject string) error {
 }
 
 func (c Coordinator) Dispatch(filters model.Filterer, actionFunc func(interface{}) error) {
+	log.Infof("starting to dispatch with dispatch limit = %d and blackout = %s", c.maxDispatches, c.blackout)
 	go func() {
 		for message := range c.envelopeCh {
 			dispatchMessage := true
