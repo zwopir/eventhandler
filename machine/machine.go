@@ -15,9 +15,11 @@ type Coordinator struct {
 	done           chan struct{}
 	lastDispatched time.Time
 	blackout       time.Duration
+	dispatches     int64
+	maxDispatches  int64
 }
 
-func NewCoordinator(conn *nats.Conn, blackout string) (Coordinator, error) {
+func NewCoordinator(conn *nats.Conn, blackout string, maxDispatches int64) (Coordinator, error) {
 	envelopeCh := make(chan model.Envelope)
 	done := make(chan struct{})
 	encConn, err := nats.NewEncodedConn(conn, protobuf.PROTOBUF_ENCODER)
@@ -29,10 +31,12 @@ func NewCoordinator(conn *nats.Conn, blackout string) (Coordinator, error) {
 		return Coordinator{}, fmt.Errorf("failed to initialize coordinator: %s", err)
 	}
 	return Coordinator{
-		envelopeCh: envelopeCh,
-		encConn:    encConn,
-		done:       done,
-		blackout:   bo,
+		envelopeCh:    envelopeCh,
+		encConn:       encConn,
+		done:          done,
+		blackout:      bo,
+		dispatches:    0,
+		maxDispatches: maxDispatches,
 	}, nil
 }
 
@@ -53,24 +57,39 @@ func (c Coordinator) NatsListen(subject string) error {
 func (c Coordinator) Dispatch(filters model.Filterer, actionFunc func(interface{}) error) {
 	go func() {
 		for message := range c.envelopeCh {
+			dispatchMessage := true
 			matched, err := filters.Match(message)
 			if err != nil {
-				log.Errorf("failed to apply matcher on %v: %s", message, err)
+				log.Errorf("failed to apply matcher on %s: %s", message, err)
 				return
 			}
-			if matched {
-				if !c.inBlackout() {
-					log.Debugf("dispatching message %s\n", message)
-					err := actionFunc(message)
-					if err != nil {
-						log.Errorf("action func in dispatcher failed: %s", err)
-					}
-					c.lastDispatched = time.Now()
-				} else {
-					log.Infof("discarding message because of blackout")
+			switch {
+			case !matched:
+				log.Infof("message %s doesn't match the provided filters, discarding it", message)
+				dispatchMessage = false
+				break
+			case c.inBlackout():
+				log.Info("discarding message because of blackout")
+				dispatchMessage = false
+				break
+			case c.maxDispatches == 0:
+				log.Debug("coordinator has no dispatch limit")
+				dispatchMessage = dispatchMessage && true
+				break
+			case c.dispatches >= c.maxDispatches:
+				log.Infof("dispatch limit exceeded (limit is %d)", c.maxDispatches)
+				dispatchMessage = false
+				break
+			}
+
+			if dispatchMessage {
+				log.Debugf("dispatching message %s\n", message)
+				err := actionFunc(message)
+				if err != nil {
+					log.Errorf("action func in dispatcher failed: %s", err)
 				}
-			} else {
-				log.Debugf("discarding message %v\n", message)
+				c.lastDispatched = time.Now()
+				c.dispatches += 1
 			}
 			select {
 			case <-c.done:

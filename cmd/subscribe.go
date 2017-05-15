@@ -30,7 +30,7 @@ to quickly create a Cobra application.`,
 		}
 		defer nc.Close()
 
-		coordinator, err := machine.NewCoordinator(nc, cfg.Command.Blackout)
+		coordinator, err := machine.NewCoordinator(nc, cfg.Command.Blackout, cfg.Command.MaxDispatches)
 		if err != nil {
 			log.Fatal(err)
 		}

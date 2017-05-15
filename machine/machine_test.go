@@ -19,7 +19,7 @@ var (
 
 func TestNewCoordinator(t *testing.T) {
 	conn := nats.Conn{}
-	_, err := NewCoordinator(&conn, "1h")
+	_, err := NewCoordinator(&conn, "1h", 0)
 	if err != nil {
 		t.Errorf("failed to construct Coordinator: %s", err)
 	}
@@ -43,7 +43,7 @@ func TestCoordinator_NatsListen(t *testing.T) {
 	}
 	defer nc.Close()
 
-	coordinator, err := NewCoordinator(nc, "1h")
+	coordinator, err := NewCoordinator(nc, "1h", 0)
 	if err != nil {
 		t.Errorf("failed to construct Coordinator: %s", err)
 	}
@@ -125,11 +125,18 @@ var (
 )
 
 func TestCoordinator_Dispatch(t *testing.T) {
+	// create a coordinator
+	conn := nats.Conn{}
+	coordinator, err := NewCoordinator(&conn, "0s", 0)
+	if err != nil {
+		t.Errorf("failed to construct Coordinator: %s", err)
+		t.Fail()
+	}
 	testCoordinatorDispatch(
 		t,
 		dispatchTestTable,
 		5*time.Millisecond,
-		"0s",
+		coordinator,
 	)
 }
 
@@ -185,11 +192,85 @@ var (
 )
 
 func TestCoordinator_Dispatch2(t *testing.T) {
+	// create a coordinator
+	conn := nats.Conn{}
+	coordinator, err := NewCoordinator(&conn, "200ms", 20)
+	if err != nil {
+		t.Errorf("failed to construct Coordinator: %s", err)
+		t.Fail()
+	}
 	testCoordinatorDispatch(
 		t,
 		dispatchBlackoutTestTable,
+		150*time.Millisecond,
+		coordinator,
+	)
+}
+
+var (
+	maxDispatchTestTable = dispatchTestTableType{
+		{
+			[]config.Filter{
+				{
+					Context: "payload",
+					Type:    "regexp",
+					Args: map[string]string{
+						"field":  "check_name",
+						"regexp": "check_.+",
+					},
+				},
+			},
+			[]model.Envelope{
+				{
+					[]byte(`testSender`),
+					[]byte(`testRecipient`),
+					[]byte(`{"check_name":"check_foo1"}`),
+					[]byte(`testSignature`),
+				},
+				{
+					[]byte(`testSender`),
+					[]byte(`testRecipient`),
+					[]byte(`{"check_name":"check_foo2"}`),
+					[]byte(`testSignature`),
+				},
+				{
+					[]byte(`testSender`),
+					[]byte(`testRecipient`),
+					[]byte(`{"check_name":"check_foo3"}`),
+					[]byte(`testSignature`),
+				},
+			},
+			[]model.Envelope{
+				{
+					[]byte(`testSender`),
+					[]byte(`testRecipient`),
+					[]byte(`{"check_name":"check_foo1"}`),
+					[]byte(`testSignature`),
+				},
+				{
+					[]byte(`testSender`),
+					[]byte(`testRecipient`),
+					[]byte(`{"check_name":"check_foo2"}`),
+					[]byte(`testSignature`),
+				},
+			},
+		},
+	}
+)
+
+func TestCoordinator_Dispatch3(t *testing.T) {
+	// create a coordinator
+	conn := nats.Conn{}
+	coordinator, err := NewCoordinator(&conn, "0s", 2)
+	if err != nil {
+		t.Errorf("failed to construct Coordinator: %s", err)
+		t.Fail()
+	}
+	testCoordinatorDispatch(
+		t,
+		maxDispatchTestTable,
 		15*time.Millisecond,
-		"20ms",
+		coordinator,
 	)
 }
 
@@ -197,16 +278,9 @@ func testCoordinatorDispatch(
 	t *testing.T,
 	dispatchTestTable dispatchTestTableType,
 	sleep time.Duration,
-	blackout string,
+	coordinator Coordinator,
 ) {
 	for _, tt := range dispatchTestTable {
-		// create a coordinator
-		conn := nats.Conn{}
-		coordinator, err := NewCoordinator(&conn, blackout)
-		if err != nil {
-			t.Errorf("failed to construct Coordinator: %s", err)
-			t.Fail()
-		}
 
 		// create test filters
 		filters, err := model.NewFiltererFromConfig(tt.configFilters)
@@ -275,7 +349,7 @@ func TestCoordinator_Shutdown(t *testing.T) {
 		t.Errorf("internal test error: %s", err)
 	}
 
-	coordinator, err := NewCoordinator(conn, "1h")
+	coordinator, err := NewCoordinator(conn, "1h", 0)
 	if err != nil {
 		t.Errorf("failed to construct Coordinator: %s", err)
 		t.Fail()

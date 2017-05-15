@@ -25,3 +25,4 @@ command:
         field: "recipient"
         regexp: "me.example.com"
   blackout: 5s
+  max_dispatches: 0
