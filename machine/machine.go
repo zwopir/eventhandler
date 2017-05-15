@@ -60,7 +60,7 @@ func (c Coordinator) Dispatch(filters model.Filterer, actionFunc func(interface{
 			}
 			if matched {
 				if !c.inBlackout() {
-					log.Debugf("dispatching message %v\n", message)
+					log.Debugf("dispatching message %s\n", message)
 					err := actionFunc(message)
 					if err != nil {
 						log.Errorf("action func in dispatcher failed: %s", err)

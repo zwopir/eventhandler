@@ -188,8 +188,8 @@ func TestCoordinator_Dispatch2(t *testing.T) {
 	testCoordinatorDispatch(
 		t,
 		dispatchBlackoutTestTable,
-		1500*time.Millisecond,
-		"2000ms",
+		15*time.Millisecond,
+		"20ms",
 	)
 }
 
@@ -249,7 +249,7 @@ func testCoordinatorDispatch(
 			coordinator.envelopeCh <- messageToDispatch
 			time.Sleep(sleep)
 		}
-		time.Sleep(2 * time.Second)
+		time.Sleep(500 * time.Millisecond)
 		close(coordinator.done)
 
 		if !reflect.DeepEqual(dispatchedMessages, tt.receivedMessages) {
