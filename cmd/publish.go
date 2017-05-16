@@ -31,7 +31,7 @@ to quickly create a Cobra application.`,
 			log.Fatalf("can't connect to nats server at %s: %s", cfg.Global.NatsAddress, err)
 		}
 		defer nc.Close()
-
+		// TODO: add payload unmarshaling test
 		encConn, err := nats.NewEncodedConn(nc, protobuf.PROTOBUF_ENCODER)
 		msg := &model.Envelope{
 			[]byte(sender),
