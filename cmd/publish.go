@@ -3,6 +3,7 @@ package cmd
 import (
 	"eventhandler/model"
 
+	"encoding/json"
 	"github.com/nats-io/go-nats"
 	"github.com/nats-io/go-nats/encoders/protobuf"
 	"github.com/prometheus/common/log"
@@ -31,8 +32,15 @@ to quickly create a Cobra application.`,
 			log.Fatalf("can't connect to nats server at %s: %s", cfg.Global.NatsAddress, err)
 		}
 		defer nc.Close()
-		// TODO: add payload unmarshaling test
+		payloadData := make(map[string]string)
+		err = json.Unmarshal([]byte(payload), &payloadData)
+		if err != nil {
+			log.Fatal("payload is not json unmashalable")
+		}
 		encConn, err := nats.NewEncodedConn(nc, protobuf.PROTOBUF_ENCODER)
+		if err != nil {
+			log.Fatalf("failed to create encoded nats connection: %s", err)
+		}
 		msg := &model.Envelope{
 			[]byte(sender),
 			[]byte(recipient),
@@ -42,7 +50,7 @@ to quickly create a Cobra application.`,
 		log.Debugf("sending message %s", msg.String())
 		err = encConn.Publish(cfg.Global.Subject, msg)
 		if err != nil {
-			log.Error(err.Error())
+			log.Fatalf("failed to publish message: %s", err)
 		}
 	},
 }
