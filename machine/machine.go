@@ -9,16 +9,27 @@ import (
 	"time"
 )
 
+// Coordinator dispatches messages read from nats to an actionFunc (func(interface{}) error)
 type Coordinator struct {
-	envelopeCh     chan model.Envelope
-	encConn        *nats.EncodedConn
-	done           chan struct{}
+	// the message channel
+	envelopeCh chan model.Envelope
+	// the encoded connection to nats (protobuf.PROTOBUF_ENCODER)
+	encConn *nats.EncodedConn
+	// channel to signalize a coordinator shutdown
+	done chan struct{}
+	// the time of the last successful message dispatch
 	lastDispatched time.Time
-	blackout       time.Duration
-	dispatches     int64
-	maxDispatches  int64
+	// after a successful message dispatch the coordinator enters a
+	// blackout in which all messages are ignored
+	blackout time.Duration
+	// number of successful dispatches
+	dispatches int64
+	// the coordinator only dispatches a certain number of messages
+	// If set to 0, the number of dispatches are unlimited
+	maxDispatches int64
 }
 
+// NewCoordinator creates a new coordinator
 func NewCoordinator(conn *nats.Conn, blackout string, maxDispatches int64) (Coordinator, error) {
 	envelopeCh := make(chan model.Envelope)
 	done := make(chan struct{})
@@ -40,10 +51,12 @@ func NewCoordinator(conn *nats.Conn, blackout string, maxDispatches int64) (Coor
 	}, nil
 }
 
+// inBlackout indicates if the coordinator is in blackout
 func (c Coordinator) inBlackout() bool {
 	return c.lastDispatched.Add(c.blackout).After(time.Now())
 }
 
+// NatsListen connects the coordinator to the provided nats topic
 func (c Coordinator) NatsListen(subject string) error {
 	_, err := c.encConn.Subscribe(subject, func(m model.Envelope) {
 		c.envelopeCh <- m
@@ -54,6 +67,9 @@ func (c Coordinator) NatsListen(subject string) error {
 	return nil
 }
 
+// Dispatch dispatches the messages received from nats to the actionFunc
+// Messages are filtered and if the filter passes, the message is checked
+// against the dispatch limit and the blackout
 func (c Coordinator) Dispatch(filters model.Filterer, actionFunc func(interface{}) error) {
 	log.Infof("starting to dispatch with dispatch limit = %d and blackout = %s", c.maxDispatches, c.blackout)
 	go func() {
@@ -102,6 +118,7 @@ func (c Coordinator) Dispatch(filters model.Filterer, actionFunc func(interface{
 	}()
 }
 
+// Shutdown stops the coordinator and closes all connections
 func (c Coordinator) Shutdown() {
 	defer close(c.done)
 	defer close(c.envelopeCh)

@@ -21,16 +21,8 @@ var (
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "eventhandler",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
+	Short: "A nats queue based remote execution/trigger framework",
+	Long:  `A nats queue based remote execution/trigger framework for monitoring event handler`,
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.
@@ -47,9 +39,6 @@ func init() {
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	cobra.OnInitialize(initConfig)
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports Persistent Flags, which, if defined here,
-	// will be global for your application.
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/config.yaml)")
 }
 
@@ -69,6 +58,7 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("can't read config from config file %s: %s", viper.ConfigFileUsed(), err)
 	}
+	// unmarshal viper to config/Config struct
 	err := viper.Unmarshal(&cfg)
 	if err != nil {
 		log.Fatal(err.Error())
