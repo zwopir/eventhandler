@@ -25,12 +25,12 @@ func NewPipeRunner(ctx context.Context, cmdString string, args []string, timeout
 
 func (pr *PipeRunner) Run(data interface{}, stdout io.Writer) error {
 	var err error
-	b := bytes.NewBuffer([]byte(``))
-	err = pr.StdinTemplate.Execute(b, &data)
+	b := new(bytes.Buffer)
+	err = pr.StdinTemplate.Execute(b, data)
 	if err != nil {
 		return err
 	}
-	log.Debugf("rendered stdin template to %s", data)
+	log.Debugf("rendered stdin template to %s", b.String())
 	err = pr.Exec(b, stdout)
 	return err
 }

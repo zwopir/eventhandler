@@ -62,7 +62,7 @@ func (c Coordinator) Dispatch(filters model.Filterer, actionFunc func(interface{
 			matched, err := filters.Match(message)
 			if err != nil {
 				log.Errorf("failed to apply matcher on %s: %s", message, err)
-				return
+				continue
 			}
 			switch {
 			case !matched:

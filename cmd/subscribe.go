@@ -72,12 +72,14 @@ to quickly create a Cobra application.`,
 			}
 			log.Debugf("got message %s\n", msg)
 			// TODO: add marshaling
-			err := runner.Run(msg.Payload, cmdStdout)
+			err := runner.Run(string(msg.Payload), cmdStdout)
 			if err != nil {
 				log.Errorf("failed to execute %s: %s", cfg.Command.Cmd, err)
+				cmdStdout.Reset()
 				return err
 			}
-			log.Debugf("cmd stdout returned %s", string(cmdStdout.Bytes()))
+			log.Debugf("cmd stdout returned %s", cmdStdout.String())
+			cmdStdout.Reset()
 			return nil
 		})
 
