@@ -5,9 +5,11 @@ import (
 
 	"bytes"
 	"context"
+	"encoding/json"
 	"eventhandler/machine"
 	"eventhandler/model"
 	"eventhandler/runner"
+	"fmt"
 	"github.com/nats-io/go-nats"
 	"github.com/prometheus/common/log"
 	"github.com/spf13/cobra"
@@ -66,13 +68,18 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 		coordinator.Dispatch(filters, func(v interface{}) error {
+			var err error
 			msg, ok := v.(model.Envelope)
 			if !ok {
 				return errors.New("failed to type assert protobuf message to envelope")
 			}
 			log.Debugf("got message %s\n", msg)
-			// TODO: add marshaling
-			err := runner.Run(string(msg.Payload), cmdStdout)
+			payloadData := make(map[string]string)
+			err = json.Unmarshal(msg.Payload, &payloadData)
+			if err != nil {
+				return fmt.Errorf("failed to unmarshal payload: %s", err)
+			}
+			err = runner.Run(payloadData, cmdStdout)
 			if err != nil {
 				log.Errorf("failed to execute %s: %s", cfg.Command.Cmd, err)
 				cmdStdout.Reset()
