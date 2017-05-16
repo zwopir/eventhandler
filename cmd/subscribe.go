@@ -55,7 +55,7 @@ to quickly create a Cobra application.`,
 			timeout,
 			stdinTemplate,
 		)
-
+		cmdStdout := new(bytes.Buffer)
 		err = coordinator.NatsListen(cfg.Global.Subject)
 		if err != nil {
 			log.Fatal(err)
@@ -66,7 +66,6 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 		coordinator.Dispatch(filters, func(v interface{}) error {
-			cmdStdout := new(bytes.Buffer)
 			msg, ok := v.(model.Envelope)
 			if !ok {
 				return errors.New("failed to type assert protobuf message to envelope")
@@ -78,7 +77,7 @@ to quickly create a Cobra application.`,
 				log.Errorf("failed to execute %s: %s", cfg.Command.Cmd, err)
 				return err
 			}
-			log.Debugf("cmd stdout returned %s", cmdStdout.Bytes())
+			log.Debugf("cmd stdout returned %s", string(cmdStdout.Bytes()))
 			return nil
 		})
 
