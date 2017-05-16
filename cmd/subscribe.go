@@ -2,15 +2,19 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 
+	"bytes"
+	"context"
 	"eventhandler/machine"
 	"eventhandler/model"
+	"eventhandler/runner"
 	"github.com/nats-io/go-nats"
 	"github.com/prometheus/common/log"
 	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
+	"text/template"
+	"time"
 )
 
 // subscribeCmd represents the subscribe command
@@ -34,6 +38,24 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		stdinTemplate, err := template.New("stdinTemplate").Parse(cfg.Command.StdinTemplate)
+		if err != nil {
+			log.Fatalf("failed to parse stdin template:", err)
+		}
+		timeout, err := time.ParseDuration(cfg.Command.Timeout)
+		if err != nil {
+			log.Fatalf("failed to parse cmd timeout:", err)
+		}
+
+		runner := runner.NewPipeRunner(
+			context.Background(),
+			cfg.Command.Cmd,
+			cfg.Command.CmdArgs,
+			timeout,
+			stdinTemplate,
+		)
+		cmdStdout := new(bytes.Buffer)
 		err = coordinator.NatsListen(cfg.Global.Subject)
 		if err != nil {
 			log.Fatal(err)
@@ -48,7 +70,14 @@ to quickly create a Cobra application.`,
 			if !ok {
 				return errors.New("failed to type assert protobuf message to envelope")
 			}
-			fmt.Printf("got message %s\n", msg)
+			log.Debugf("got message %s\n", msg)
+			// TODO: add marshaling
+			err := runner.Run(msg.Payload, cmdStdout)
+			if err != nil {
+				log.Errorf("failed to execute %s: %s", cfg.Command.Cmd, err)
+				return err
+			}
+			log.Debugf("cmd stdout returned %s", string(cmdStdout.Bytes()))
 			return nil
 		})
 
@@ -62,15 +91,4 @@ to quickly create a Cobra application.`,
 
 func init() {
 	RootCmd.AddCommand(subscribeCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// subscribeCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// subscribeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
 }

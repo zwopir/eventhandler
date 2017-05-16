@@ -17,8 +17,9 @@ type Global struct {
 
 type Command struct {
 	Cmd           string   `yaml:"cmd"`
-	CmdArgs       []string `yaml:"cmd_args"`
-	StdinTemplate string   `yaml:"stdin_template"`
+	CmdArgs       []string `yaml:"cmdargs"`
+	Timeout       string   `yaml:"timeout"`
+	StdinTemplate string   `yaml:"stdintemplate"`
 	Filters       []Filter `yaml:"filters"`
 	Blackout      string   `yaml:"blackout"`
 	MaxDispatches int64    `yaml:"maxdispatches"`
