@@ -30,7 +30,7 @@ func (pr *PipeRunner) Run(data interface{}, stdout io.Writer) error {
 	if err != nil {
 		return err
 	}
-	log.Debugf("rendered stdin template to %s", string(b.Bytes()))
+	log.Debugf("rendered stdin template to %s", b.String())
 	err = pr.Exec(b, stdout)
 	return err
 }
