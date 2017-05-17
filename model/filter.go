@@ -117,7 +117,7 @@ func (p payloadMessageKeyRetriever) getValue(v interface{}) ([]byte, error) {
 	if !ok {
 		return nil, fmt.Errorf("type assertion of %v to Envelope failed", v)
 	}
-	message := Message{}
+	message := map[string]string{}
 	err := json.Unmarshal(e.Payload, &message)
 	if err != nil {
 		return nil, err
