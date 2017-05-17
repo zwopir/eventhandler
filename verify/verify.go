@@ -3,11 +3,10 @@ package verify
 import (
 	"golang.org/x/crypto/openpgp"
 	// "github.com/prometheus/common/log"
-	"io"
-	"errors"
 	"bytes"
+	"errors"
+	"io"
 )
-
 
 type Signer struct {
 	entity *openpgp.Entity
@@ -58,17 +57,9 @@ func (s *Signer) Sign(message io.Reader) ([]byte, error) {
 	return signature.Bytes(), nil
 }
 
-
 func (v *Verifier) Verify(message, signature []byte) error {
 	messageBuffer := bytes.NewBuffer(message)
 	signatureBuffer := bytes.NewBuffer(signature)
 	_, err := openpgp.CheckArmoredDetachedSignature(v.keyring, messageBuffer, signatureBuffer)
 	return err
 }
-
-
-
-
-
-
-
