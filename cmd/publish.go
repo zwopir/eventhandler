@@ -11,14 +11,10 @@ import (
 	"github.com/prometheus/common/log"
 	"github.com/spf13/cobra"
 	"os"
+	"github.com/spf13/viper"
 )
 
-var (
-	sender         string
-	recipient      string
-	payload        string
-	privateKeyPath string
-)
+var payload string
 
 // publishCmd represents the publish command
 var publishCmd = &cobra.Command{
@@ -29,6 +25,17 @@ var publishCmd = &cobra.Command{
 The payload must be a hash of strings
 formatted as json (for example {"check_name":"check_connection"})`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// get config values
+		sender := viper.GetString("sender")
+		recipient := viper.GetString("recipient")
+		privateKeyPath := viper.GetString("signkey")
+
+		// validate payload
+		if payload == "" {
+			log.Fatal("payload is a mandatory parameter")
+		}
+
+		// initialize signer if requested
 		signMessage := false
 		signer := &verify.Signer{}
 		if privateKeyPath != "" {
@@ -53,7 +60,7 @@ formatted as json (for example {"check_name":"check_connection"})`,
 		payloadData := make(map[string]string)
 		err = json.Unmarshal([]byte(payload), &payloadData)
 		if err != nil {
-			log.Fatal("payload is not json unmarshalable")
+			log.Fatalf("payload %v is not json unmarshalable", payload)
 		}
 		// protobuf encode message in the nats queue
 		encConn, err := nats.NewEncodedConn(nc, protobuf.PROTOBUF_ENCODER)
@@ -90,8 +97,17 @@ formatted as json (for example {"check_name":"check_connection"})`,
 func init() {
 	RootCmd.AddCommand(publishCmd)
 
-	publishCmd.Flags().StringVar(&sender, "sender", "localhost", "sender name")
-	publishCmd.Flags().StringVar(&recipient, "recipient", "localhost", "recipient name")
-	publishCmd.Flags().StringVar(&payload, "payload", "{}", "message payload")
-	publishCmd.Flags().StringVar(&privateKeyPath, "signkey", "", "private key for message signing")
+	// define flags
+	publishCmd.Flags().String("sender", "localhost", "sender name")
+	publishCmd.Flags().String("recipient", "localhost", "recipient name")
+	publishCmd.Flags().String("signkey", "", "private key file for message signing")
+
+	// bind cobra flags to viper
+	viper.BindPFlag("sender", publishCmd.Flags().Lookup("sender"))
+	viper.BindPFlag("recipient", publishCmd.Flags().Lookup("recipient"))
+	viper.BindPFlag("signkey", publishCmd.Flags().Lookup("signkey"))
+
+	// payload is not a viper config value
+	publishCmd.Flags().StringVar(&payload,"payload", "", "message payload")
+
 }

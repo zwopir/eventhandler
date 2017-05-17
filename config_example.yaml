@@ -1,4 +1,7 @@
 ---
+sender: "nagios.example.com"
+recipient: "me.example.com"
+
 global:
   natsaddress: "nats://127.0.0.1:4222"
   subject: "eventhandler"
