@@ -67,7 +67,7 @@ func (c Coordinator) NatsListen(subject string) error {
 	return nil
 }
 
-// Dispatch dispatches the messages received from nats to the actionFunc
+// Dispatch dispatches the messages received from nats to the actionFunc.
 // Messages are filtered and if the filter passes, the message is checked
 // against the dispatch limit and the blackout
 func (c Coordinator) Dispatch(filters model.Filterer, actionFunc func(interface{}) error) {

@@ -28,7 +28,7 @@ type Command struct {
 	MaxDispatches int64    `yaml:"maxdispatches"`
 }
 
-// Filter represents the filter settings the Args keys and values are specific to the filtering
+// Filter represents the filter settings, the Args keys and values are specific to the filtering
 // implemented in the package "model"
 type Filter struct {
 	Type    string            `yaml:"type"`
