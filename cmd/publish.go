@@ -10,8 +10,8 @@ import (
 	"github.com/nats-io/go-nats/encoders/protobuf"
 	"github.com/prometheus/common/log"
 	"github.com/spf13/cobra"
-	"os"
 	"github.com/spf13/viper"
+	"os"
 )
 
 var payload string
@@ -108,6 +108,6 @@ func init() {
 	viper.BindPFlag("signkey", publishCmd.Flags().Lookup("signkey"))
 
 	// payload is not a viper config value
-	publishCmd.Flags().StringVar(&payload,"payload", "", "message payload")
+	publishCmd.Flags().StringVar(&payload, "payload", "", "message payload")
 
 }
