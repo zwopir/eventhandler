@@ -100,8 +100,8 @@ func newEnvelopeValueRetriever(field string) envelopeValueRetriever {
 	}
 }
 
-// payloadMessageKeyRetriever retrieves a value from the envelope's payload
-// it is assumed that the payload is marshalable to a map[string]string
+// payloadMessageKeyRetriever retrieves a value from the envelope's payload.
+// It is assumed that the payload is marshalable to a map[string]string
 type payloadMessageKeyRetriever struct {
 	key string
 }
@@ -128,8 +128,8 @@ func (p payloadMessageKeyRetriever) getValue(v interface{}) ([]byte, error) {
 	return nil, RetrieverMissingFieldError
 }
 
-// newRegexpFilterer returns a filterer that implements the filterer interface
-// it retrieves the value with the provided retriever and matches it against the provided regexp
+// newRegexpFilterer returns a filterer that implements the filterer interface.
+// It retrieves the value with the provided retriever and matches it against the provided regexp
 func newRegexpFilterer(retriever retriever, regexp *regexp.Regexp) (Filterer, error) {
 	filterer := newBasicFilter(
 		func(v interface{}) (bool, error) {
@@ -148,7 +148,7 @@ func newRegexpFilterer(retriever retriever, regexp *regexp.Regexp) (Filterer, er
 	return filterer, nil
 }
 
-// NewFiltererFromConfig returns a filterBattery, implementing the Filterer interface
+// NewFiltererFromConfig returns a filterBattery, implementing the Filterer interface.
 // The basic filterer and retriever are chosen based on the provided filter config
 func NewFiltererFromConfig(configFilters []config.Filter) (Filterer, error) {
 	var (

@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// PipeRunner represents a type that defines a command via an ExecFunc
+// PipeRunner represents a type that defines a command via an ExecFunc.
 // Its Run method takes data as interface{} which are rendered an passed to the commands
 // stdin io.Reader
 type PipeRunner struct {
