@@ -3,17 +3,21 @@ package cmd
 import (
 	"eventhandler/model"
 
+	"bytes"
 	"encoding/json"
+	"eventhandler/verify"
 	"github.com/nats-io/go-nats"
 	"github.com/nats-io/go-nats/encoders/protobuf"
 	"github.com/prometheus/common/log"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var (
-	sender    string
-	recipient string
-	payload   string
+	sender         string
+	recipient      string
+	payload        string
+	privateKeyPath string
 )
 
 // publishCmd represents the publish command
@@ -25,6 +29,19 @@ var publishCmd = &cobra.Command{
 The payload must be a hash of strings
 formatted as json (for example {"check_name":"check_connection"})`,
 	Run: func(cmd *cobra.Command, args []string) {
+		signMessage := false
+		signer := &verify.Signer{}
+		if privateKeyPath != "" {
+			privkeyBuffer, err := os.Open(privateKeyPath)
+			if err != nil {
+				log.Fatal(err)
+			}
+			signer, err = verify.NewSigner(privkeyBuffer)
+			if err != nil {
+				log.Fatalf("failed to initialize signer: %s", err)
+			}
+			signMessage = true
+		}
 		nc, err := nats.Connect(cfg.Global.NatsAddress)
 		if err != nil {
 			log.Fatalf("can't connect to nats server at %s: %s", cfg.Global.NatsAddress, err)
@@ -43,11 +60,24 @@ formatted as json (for example {"check_name":"check_connection"})`,
 		if err != nil {
 			log.Fatalf("failed to create encoded nats connection: %s", err)
 		}
+
+		// calculate signature if requested
+		signature := []byte(``)
+		if signMessage {
+			signBuffer := new(bytes.Buffer)
+			signBuffer.WriteString(sender)
+			signBuffer.WriteString(recipient)
+			signBuffer.WriteString(payload)
+			signature, err = signer.Sign(signBuffer)
+			if err != nil {
+				log.Fatalf("failed to sign message: %s", err)
+			}
+		}
 		msg := &model.Envelope{
-			[]byte(sender),
-			[]byte(recipient),
-			[]byte(payload),
-			[]byte(`testSignature`),
+			Sender:    []byte(sender),
+			Recipient: []byte(recipient),
+			Payload:   []byte(payload),
+			Signature: signature,
 		}
 		log.Debugf("sending message %s", msg.String())
 		err = encConn.Publish(cfg.Global.Subject, msg)
@@ -63,4 +93,5 @@ func init() {
 	publishCmd.Flags().StringVar(&sender, "sender", "localhost", "sender name")
 	publishCmd.Flags().StringVar(&recipient, "recipient", "localhost", "recipient name")
 	publishCmd.Flags().StringVar(&payload, "payload", "{}", "message payload")
+	publishCmd.Flags().StringVar(&privateKeyPath, "signkey", "", "private key for message signing")
 }
