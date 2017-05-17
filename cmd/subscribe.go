@@ -22,13 +22,11 @@ import (
 // subscribeCmd represents the subscribe command
 var subscribeCmd = &cobra.Command{
 	Use:   "subscribe",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Subscribe to the eventhandler queue",
+	Long: `Subscribe to the eventhandler queue.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+The process listens on the specfied nats topic and runs the specified command if it receives a matching
+message. The message payload is rendered via the configured templated and passed to the commands stdin.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		nc, err := nats.Connect(cfg.Global.NatsAddress)
 		if err != nil {
@@ -36,20 +34,27 @@ to quickly create a Cobra application.`,
 		}
 		defer nc.Close()
 
+		// create a coordinator
 		coordinator, err := machine.NewCoordinator(nc, cfg.Command.Blackout, cfg.Command.MaxDispatches)
 		if err != nil {
 			log.Fatal(err)
 		}
 
+		// parse the configured template
 		stdinTemplate, err := template.New("stdinTemplate").Parse(cfg.Command.StdinTemplate)
 		if err != nil {
 			log.Fatalf("failed to parse stdin template:", err)
 		}
+
+		// a command only waits `timeout` for a command termination.
+		// Commands running longer than the timeout are kill -9'ed
+		// For further documentation see godoc os/exec CommandContext
 		timeout, err := time.ParseDuration(cfg.Command.Timeout)
 		if err != nil {
 			log.Fatalf("failed to parse cmd timeout:", err)
 		}
 
+		// create the runner
 		runner := runner.NewPipeRunner(
 			context.Background(),
 			cfg.Command.Cmd,
@@ -57,16 +62,23 @@ to quickly create a Cobra application.`,
 			timeout,
 			stdinTemplate,
 		)
+
+		// buffer that receives the commands stdout
 		cmdStdout := new(bytes.Buffer)
+
+		// start listening on the configured nats topic
 		err = coordinator.NatsListen(cfg.Global.Subject)
 		if err != nil {
 			log.Fatal(err)
 		}
 
+		// create filterer from config
 		filters, err := model.NewFiltererFromConfig(cfg.Command.Filters)
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		// dispatch messaged received from the queue to the handling function, i.e. the runner
 		coordinator.Dispatch(filters, func(v interface{}) error {
 			var err error
 			msg, ok := v.(model.Envelope)
@@ -74,11 +86,15 @@ to quickly create a Cobra application.`,
 				return errors.New("failed to type assert protobuf message to envelope")
 			}
 			log.Debugf("got message %s\n", msg)
+
+			// unmarshal the payload to map[string]string
 			payloadData := make(map[string]string)
 			err = json.Unmarshal(msg.Payload, &payloadData)
 			if err != nil {
 				return fmt.Errorf("failed to unmarshal payload: %s", err)
 			}
+
+			// run the command with the unmarshaled payload data
 			err = runner.Run(payloadData, cmdStdout)
 			if err != nil {
 				log.Errorf("failed to execute %s: %s", cfg.Command.Cmd, err)
@@ -90,6 +106,7 @@ to quickly create a Cobra application.`,
 			return nil
 		})
 
+		// shutdown coordinator on SIGKILL
 		signalChan := make(chan os.Signal, 1)
 		signal.Notify(signalChan, os.Interrupt)
 

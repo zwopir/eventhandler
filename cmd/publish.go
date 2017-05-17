@@ -19,24 +19,26 @@ var (
 // publishCmd represents the publish command
 var publishCmd = &cobra.Command{
 	Use:   "publish",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Publish a message to the eventhandler queue",
+	Long: `Publish a messsage to the eventhandler queue.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+The payload must be a hash of strings
+formatted as json (for example {"check_name":"check_connection"})`,
 	Run: func(cmd *cobra.Command, args []string) {
 		nc, err := nats.Connect(cfg.Global.NatsAddress)
 		if err != nil {
 			log.Fatalf("can't connect to nats server at %s: %s", cfg.Global.NatsAddress, err)
 		}
 		defer nc.Close()
+
+		// unmarshal payload to make sure it can be unmarshaled in subscriber
+		// the unmarshaled data is discarded
 		payloadData := make(map[string]string)
 		err = json.Unmarshal([]byte(payload), &payloadData)
 		if err != nil {
-			log.Fatal("payload is not json unmashalable")
+			log.Fatal("payload is not json unmarshalable")
 		}
+		// protobuf encode message in the nats queue
 		encConn, err := nats.NewEncodedConn(nc, protobuf.PROTOBUF_ENCODER)
 		if err != nil {
 			log.Fatalf("failed to create encoded nats connection: %s", err)

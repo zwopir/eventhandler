@@ -13,12 +13,15 @@ var (
 	RetrieverMissingFieldError error = errors.New("failed to retrieve value from interface")
 )
 
+// Filterer
 type Filterer interface {
 	Match(interface{}) (bool, error)
 }
 
+// FilterBattery is a list of Filterer. It implements the Filterer itself
 type FilterBattery []Filterer
 
+// newFilterBattery creates a FilterBattery from a list of types that implement Filterer
 func newFilterBattery(filters ...Filterer) FilterBattery {
 	ret := FilterBattery{}
 	for _, f := range filters {
@@ -114,7 +117,7 @@ func (p payloadMessageKeyRetriever) getValue(v interface{}) ([]byte, error) {
 	if !ok {
 		return nil, fmt.Errorf("type assertion of %v to Envelope failed", v)
 	}
-	message := Message{}
+	message := map[string]string{}
 	err := json.Unmarshal(e.Payload, &message)
 	if err != nil {
 		return nil, err
@@ -193,9 +196,3 @@ func NewFiltererFromConfig(configFilters []config.Filter) (Filterer, error) {
 	}
 	return newFilterBattery(filters...), nil
 }
-
-/*
-func newSignatureFilterer() (Filterer, error) {
-
-}
-*/
