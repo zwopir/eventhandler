@@ -1,21 +1,16 @@
 package verify
 
 import (
-	"testing"
-	"os"
 	"bytes"
+	"os"
+	"testing"
 )
 
-func TestNewSigner(t *testing.T) {
-	t.Log("allet jut")
-}
-
-
-var verifyTestTable = []struct{
-	message []byte
-	failingMessage []byte
-	privateKeyPath string
-	publicKeyPath string
+var verifyTestTable = []struct {
+	message              []byte
+	failingMessage       []byte
+	privateKeyPath       string
+	publicKeyPath        string
 	failingPublicKeyPath string
 }{
 	{
@@ -25,6 +20,32 @@ var verifyTestTable = []struct{
 		"testdata/public.key",
 		"testdata/non_matching_public.key",
 	},
+}
+
+func TestNewSigner(t *testing.T) {
+	for _, tt := range verifyTestTable {
+		privkeyBuffer, err := os.Open(tt.privateKeyPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = NewSigner(privkeyBuffer)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestNewVerifier(t *testing.T) {
+	for _, tt := range verifyTestTable {
+		pubkeyBuffer, err := os.Open(tt.publicKeyPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = NewVerifier(pubkeyBuffer)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
 func TestSigner_Sign(t *testing.T) {
