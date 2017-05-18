@@ -28,7 +28,19 @@ var subscribeCmd = &cobra.Command{
 The process listens on the specfied nats topic and runs the specified command if it receives a matching
 message. The message payload is rendered via the configured templated and passed to the commands stdin.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		nc, err := nats.Connect(cfg.Global.NatsAddress)
+		natsOptions := nats.Options{
+			Url:            cfg.Global.NatsAddress,
+			AllowReconnect: true,
+			MaxReconnect:   -1,
+			ReconnectWait:  2 * time.Second,
+			DisconnectedCB: func(conn *nats.Conn) {
+				log.Warnf("disconnected from nats server(s) %s", conn.Servers())
+			},
+			ReconnectedCB: func(conn *nats.Conn) {
+				log.Infof("successfully reconnected to %s", conn.ConnectedUrl())
+			},
+		}
+		nc, err := natsOptions.Connect()
 		if err != nil {
 			log.Fatalf("can't connect to nats server at %s: %s", cfg.Global.NatsAddress, err)
 		}
