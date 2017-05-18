@@ -91,6 +91,7 @@ formatted as json (for example {"check_name":"check_connection"})`,
 		if err != nil {
 			log.Fatalf("failed to publish message: %s", err)
 		}
+		log.Info("sent message")
 	},
 }
 

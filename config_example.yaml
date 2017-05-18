@@ -1,6 +1,7 @@
 ---
 sender: "nagios.example.com"
 recipient: "me.example.com"
+signkey: "verify/testdata/private.key"
 
 global:
   natsaddress: "nats://127.0.0.1:4222"

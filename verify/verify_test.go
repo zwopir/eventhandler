@@ -94,6 +94,8 @@ func TestVerifier_Verify(t *testing.T) {
 		err = verifier.Verify(tt.message, signature)
 		if err != nil {
 			t.Fatal(err)
+		} else {
+			t.Log("signature checking witch matching key and message passes")
 		}
 		err = verifier.Verify(tt.failingMessage, signature)
 		if err == nil {

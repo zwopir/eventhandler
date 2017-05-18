@@ -1,10 +1,9 @@
 package verify
 
 import (
-	"golang.org/x/crypto/openpgp"
-	// "github.com/prometheus/common/log"
 	"bytes"
 	"errors"
+	"golang.org/x/crypto/openpgp"
 	"io"
 )
 
@@ -17,7 +16,6 @@ type Verifier struct {
 }
 
 func NewSigner(privateKeyringBuffer io.Reader) (*Signer, error) {
-	// entityList implements the openpgp.KeyRing interface
 	entityList, err := readKeyring(privateKeyringBuffer)
 	if err != nil {
 		return nil, err
@@ -28,6 +26,7 @@ func NewSigner(privateKeyringBuffer io.Reader) (*Signer, error) {
 }
 
 func NewVerifier(publicKeyringBuffer io.Reader) (*Verifier, error) {
+	// entityList implements the openpgp.KeyRing interface
 	keyring, err := readKeyring(publicKeyringBuffer)
 	if err != nil {
 		return nil, err
