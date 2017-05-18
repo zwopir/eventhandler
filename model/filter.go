@@ -1,11 +1,14 @@
 package model
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"eventhandler/config"
+	"eventhandler/verify"
 	"fmt"
 	"github.com/prometheus/common/log"
+	"os"
 	"regexp"
 )
 
@@ -63,7 +66,7 @@ func newBasicFilter(f func(interface{}) (bool, error)) basicFilter {
 	}
 }
 
-// retriever retries a value to be filtered by a Filterer
+// retriever retrieves a value to be filtered by a Filterer
 type retriever interface {
 	getValue(v interface{}) ([]byte, error)
 }
@@ -130,7 +133,7 @@ func (p payloadMessageKeyRetriever) getValue(v interface{}) ([]byte, error) {
 
 // newRegexpFilterer returns a filterer that implements the filterer interface.
 // It retrieves the value with the provided retriever and matches it against the provided regexp
-func newRegexpFilterer(retriever retriever, regexp *regexp.Regexp) (Filterer, error) {
+func newRegexpFilterer(retriever retriever, regexp *regexp.Regexp) Filterer {
 	filterer := newBasicFilter(
 		func(v interface{}) (bool, error) {
 			valueToCompare, err := retriever.getValue(v)
@@ -145,7 +148,32 @@ func newRegexpFilterer(retriever retriever, regexp *regexp.Regexp) (Filterer, er
 			return regexp.Match(valueToCompare), nil
 		},
 	)
-	return filterer, nil
+	return filterer
+}
+
+func newSignatureFilterer(verifier *verify.Verifier) Filterer {
+	filterer := newBasicFilter(
+		func(v interface{}) (bool, error) {
+			messageBuffer := new(bytes.Buffer)
+			for _, envelopeField := range []string{"sender", "recipient", "payload"} {
+				value, err := envelopeValueRetriever{field: envelopeField}.getValue(v)
+				if err != nil {
+					return false, err
+				}
+				messageBuffer.Write(value)
+			}
+			signature, err := envelopeValueRetriever{field: "signature"}.getValue(v)
+			if err != nil {
+				return false, err
+			}
+			verifyErr := verifier.Verify(messageBuffer.Bytes(), signature)
+			if verifyErr != nil {
+				return false, nil
+			}
+			return true, nil
+		},
+	)
+	return filterer
 }
 
 // NewFiltererFromConfig returns a filterBattery, implementing the Filterer interface.
@@ -172,6 +200,8 @@ func NewFiltererFromConfig(configFilters []config.Filter) (Filterer, error) {
 				return nil, errors.New("mandatory argument 'field' not found in filter configuration.")
 			}
 			retriever = newEnvelopeValueRetriever(field)
+		case "signature":
+
 		default:
 			log.Warnf("filter context %s is not supported", cf.Context)
 		}
@@ -185,7 +215,21 @@ func NewFiltererFromConfig(configFilters []config.Filter) (Filterer, error) {
 			if err != nil {
 				return nil, err
 			}
-			matcher, err = newRegexpFilterer(retriever, re)
+			matcher = newRegexpFilterer(retriever, re)
+		case "signature":
+			verifyKey, found := cf.Args["verifykey"]
+			if !found {
+				return nil, errors.New("mandatory argument 'verifykey' not found in filter configuration")
+			}
+			verifyKeyBuffer, err := os.Open(verifyKey)
+			if err != nil {
+				return nil, err
+			}
+			verifier, err := verify.NewVerifier(verifyKeyBuffer)
+			if err != nil {
+				return nil, err
+			}
+			matcher = newSignatureFilterer(verifier)
 		default:
 			log.Warnf("filter type %s is not implemented", cf.Type)
 		}

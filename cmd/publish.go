@@ -75,6 +75,7 @@ formatted as json (for example {"check_name":"check_connection"})`,
 			signBuffer.WriteString(sender)
 			signBuffer.WriteString(recipient)
 			signBuffer.WriteString(payload)
+			log.Debugf("message to sign: %s", string(signBuffer.Bytes()))
 			signature, err = signer.Sign(signBuffer)
 			if err != nil {
 				log.Fatalf("failed to sign message: %s", err)

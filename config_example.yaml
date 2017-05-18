@@ -29,5 +29,9 @@ command:
       args:
         field: "recipient"
         regexp: "me.example.com"
+    - type: signature
+      context: signature
+      args:
+        verifykey: "verify/testdata/public.key"
   blackout: 5s
   maxdispatches: 3
