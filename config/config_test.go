@@ -44,6 +44,13 @@ var configTT = []struct {
 							"regexp": "me.example.com",
 						},
 					},
+					{
+						Context: "signature",
+						Type:    "signature",
+						Args: map[string]string{
+							"verifykey": "verify/testdata/public.key",
+						},
+					},
 				},
 				Blackout:      "5s",
 				MaxDispatches: 3,
