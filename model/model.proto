@@ -6,4 +6,5 @@ message Envelope {
     bytes recipient = 2;
     bytes payload = 3;
     bytes signature = 4;
+    bytes correlation_id = 5;
 }
