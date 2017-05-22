@@ -1,7 +1,7 @@
 package machine
 
 import (
-	"eventhandler/config"
+	"eventhandler/filter"
 	"eventhandler/model"
 	"fmt"
 	"github.com/nats-io/gnatsd/server"
@@ -54,7 +54,7 @@ func TestCoordinator_NatsListen(t *testing.T) {
 }
 
 type dispatchTestTableType []struct {
-	configFilters      []config.Filter
+	configFilters      filter.FilterConfig
 	messagesToDispatch []model.Envelope
 	receivedMessages   []model.Envelope
 }
@@ -62,7 +62,7 @@ type dispatchTestTableType []struct {
 var (
 	dispatchTestTable = dispatchTestTableType{
 		{
-			[]config.Filter{
+			filter.FilterConfig{
 				{
 					Context: "payload",
 					Type:    "regexp",
@@ -143,7 +143,7 @@ func TestCoordinator_Dispatch(t *testing.T) {
 var (
 	dispatchBlackoutTestTable = dispatchTestTableType{
 		{
-			[]config.Filter{
+			filter.FilterConfig{
 				{
 					Context: "payload",
 					Type:    "regexp",
@@ -210,7 +210,7 @@ func TestCoordinator_Dispatch2(t *testing.T) {
 var (
 	maxDispatchTestTable = dispatchTestTableType{
 		{
-			[]config.Filter{
+			filter.FilterConfig{
 				{
 					Context: "payload",
 					Type:    "regexp",
@@ -283,7 +283,7 @@ func testCoordinatorDispatch(
 	for _, tt := range dispatchTestTable {
 
 		// create test filters
-		filters, err := model.NewFiltererFromConfig(tt.configFilters)
+		filters, err := filter.NewFiltererFromConfig(tt.configFilters)
 		if err != nil {
 			t.Errorf("failed to create filter for %v (%s)",
 				tt.configFilters,

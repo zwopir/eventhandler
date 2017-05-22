@@ -1,10 +1,10 @@
-package model
+package filter
 
 import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"eventhandler/config"
+	"eventhandler/model"
 	"eventhandler/verify"
 	"fmt"
 	"github.com/prometheus/common/log"
@@ -15,6 +15,17 @@ import (
 var (
 	RetrieverMissingFieldError error = errors.New("failed to retrieve value from interface")
 )
+
+// FilterConfig represents the filter config
+type FilterConfig []FilterSettings
+
+// Filter represents the filter settings, the Args keys and values are specific to the filtering
+// implemented in the package "model"
+type FilterSettings struct {
+	Type    string            `yaml:"type"`
+	Context string            `yaml:"context"`
+	Args    map[string]string `yaml:"args"`
+}
 
 // Filterer
 type Filterer interface {
@@ -78,7 +89,7 @@ type envelopeValueRetriever struct {
 
 // getValue implements the retriever interface
 func (r envelopeValueRetriever) getValue(v interface{}) ([]byte, error) {
-	e, ok := v.(Envelope)
+	e, ok := v.(model.Envelope)
 	if !ok {
 		return nil, fmt.Errorf("type assertion of %v to Envelope failed", v)
 	}
@@ -116,7 +127,7 @@ func newPayloadMessageValueRetriever(key string) payloadMessageKeyRetriever {
 
 // getValue implements the retriever interface
 func (p payloadMessageKeyRetriever) getValue(v interface{}) ([]byte, error) {
-	e, ok := v.(Envelope)
+	e, ok := v.(model.Envelope)
 	if !ok {
 		return nil, fmt.Errorf("type assertion of %v to Envelope failed", v)
 	}
@@ -178,7 +189,7 @@ func newSignatureFilterer(verifier *verify.Verifier) Filterer {
 
 // NewFiltererFromConfig returns a filterBattery, implementing the Filterer interface.
 // The basic filterer and retriever are chosen based on the provided filter config
-func NewFiltererFromConfig(configFilters []config.Filter) (Filterer, error) {
+func NewFiltererFromConfig(configFilters FilterConfig) (Filterer, error) {
 	var (
 		retriever retriever
 		matcher   Filterer

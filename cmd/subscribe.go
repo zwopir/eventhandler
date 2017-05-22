@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"eventhandler/filter"
 	"eventhandler/machine"
 	"eventhandler/model"
 	"eventhandler/runner"
@@ -13,6 +14,7 @@ import (
 	"github.com/nats-io/go-nats"
 	"github.com/prometheus/common/log"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"os"
 	"os/signal"
 	"text/template"
@@ -28,8 +30,20 @@ var subscribeCmd = &cobra.Command{
 The process listens on the specfied nats topic and runs the specified command if it receives a matching
 message. The message payload is rendered via the configured templated and passed to the commands stdin.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		natsUrl := viper.GetString("nats_url")
+		subject := viper.GetString("subject")
+		command := &machine.CoordinatorConfig{}
+		err := viper.UnmarshalKey("command", command)
+		if err != nil {
+			log.Fatal(err)
+		}
+		filterConfig := filter.FilterConfig{}
+		err = viper.UnmarshalKey("filters", &filterConfig)
+		if err != nil {
+			log.Fatal(err)
+		}
 		natsOptions := nats.Options{
-			Url:            cfg.Global.NatsAddress,
+			Url:            natsUrl,
 			AllowReconnect: true,
 			MaxReconnect:   -1,
 			ReconnectWait:  2 * time.Second,
@@ -42,18 +56,18 @@ message. The message payload is rendered via the configured templated and passed
 		}
 		nc, err := natsOptions.Connect()
 		if err != nil {
-			log.Fatalf("can't connect to nats server at %s: %s", cfg.Global.NatsAddress, err)
+			log.Fatalf("can't connect to nats server at %s: %s", natsUrl, err)
 		}
 		defer nc.Close()
 
 		// create a coordinator
-		coordinator, err := machine.NewCoordinator(nc, cfg.Command.Blackout, cfg.Command.MaxDispatches)
+		coordinator, err := machine.NewCoordinator(nc, command.Blackout, command.MaxDispatches)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		// parse the configured template
-		stdinTemplate, err := template.New("stdinTemplate").Parse(cfg.Command.StdinTemplate)
+		stdinTemplate, err := template.New("stdinTemplate").Parse(command.StdinTemplate)
 		if err != nil {
 			log.Fatalf("failed to parse stdin template:", err)
 		}
@@ -61,7 +75,7 @@ message. The message payload is rendered via the configured templated and passed
 		// a command only waits `timeout` for a command termination.
 		// Commands running longer than the timeout are kill -9'ed
 		// For further documentation see godoc os/exec CommandContext
-		timeout, err := time.ParseDuration(cfg.Command.Timeout)
+		timeout, err := time.ParseDuration(command.Timeout)
 		if err != nil {
 			log.Fatalf("failed to parse cmd timeout:", err)
 		}
@@ -69,8 +83,8 @@ message. The message payload is rendered via the configured templated and passed
 		// create the runner
 		runner := runner.NewPipeRunner(
 			context.Background(),
-			cfg.Command.Cmd,
-			cfg.Command.CmdArgs,
+			command.Cmd,
+			command.CmdArgs,
 			timeout,
 			stdinTemplate,
 		)
@@ -79,13 +93,13 @@ message. The message payload is rendered via the configured templated and passed
 		cmdStdout := new(bytes.Buffer)
 
 		// start listening on the configured nats topic
-		err = coordinator.NatsListen(cfg.Global.Subject)
+		err = coordinator.NatsListen(subject)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		// create filterer from config
-		filters, err := model.NewFiltererFromConfig(cfg.Command.Filters)
+		filters, err := filter.NewFiltererFromConfig(filterConfig)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -109,7 +123,7 @@ message. The message payload is rendered via the configured templated and passed
 			// run the command with the unmarshaled payload data
 			err = runner.Run(payloadData, cmdStdout)
 			if err != nil {
-				log.Errorf("failed to execute %s: %s", cfg.Command.Cmd, err)
+				log.Errorf("failed to execute %s: %s", command.Cmd, err)
 				cmdStdout.Reset()
 				return err
 			}
@@ -129,4 +143,10 @@ message. The message payload is rendered via the configured templated and passed
 
 func init() {
 	RootCmd.AddCommand(subscribeCmd)
+
+	subscribeCmd.Flags().String("subject", "eventhandler", "nats subject")
+	subscribeCmd.Flags().String("nats_url", nats.DefaultURL, "nats url")
+
+	viper.BindPFlag("subject", subscribeCmd.Flags().Lookup("subject"))
+	viper.BindPFlag("nats_url", subscribeCmd.Flags().Lookup("nats_url"))
 }

@@ -1,6 +1,7 @@
 package machine
 
 import (
+	"eventhandler/filter"
 	"eventhandler/model"
 	"fmt"
 	"github.com/nats-io/go-nats"
@@ -70,7 +71,7 @@ func (c Coordinator) NatsListen(subject string) error {
 // Dispatch dispatches the messages received from nats to the actionFunc.
 // Messages are filtered and if the filter passes, the message is checked
 // against the dispatch limit and the blackout
-func (c Coordinator) Dispatch(filters model.Filterer, actionFunc func(interface{}) error) {
+func (c Coordinator) Dispatch(filters filter.Filterer, actionFunc func(interface{}) error) {
 	log.Infof("starting to dispatch with dispatch limit = %d and blackout = %s", c.maxDispatches, c.blackout)
 	go func() {
 		for message := range c.envelopeCh {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"eventhandler/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -15,7 +14,6 @@ import (
 
 var (
 	cfgFile string
-	cfg     config.Config
 )
 
 // RootCmd represents the base command when called without any subcommands
@@ -57,10 +55,5 @@ func initConfig() {
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("can't read config from config file %s: %s", viper.ConfigFileUsed(), err)
-	}
-	// unmarshal viper to config/Config struct
-	err := viper.Unmarshal(&cfg)
-	if err != nil {
-		log.Fatal(err.Error())
 	}
 }
