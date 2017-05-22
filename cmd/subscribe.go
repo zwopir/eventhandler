@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"eventhandler/filter"
 	"eventhandler/machine"
 	"eventhandler/model"
 	"eventhandler/runner"
@@ -85,7 +86,7 @@ message. The message payload is rendered via the configured templated and passed
 		}
 
 		// create filterer from config
-		filters, err := model.NewFiltererFromConfig(cfg.Command.Filters)
+		filters, err := filter.NewFiltererFromConfig(cfg.Command.Filters)
 		if err != nil {
 			log.Fatal(err)
 		}

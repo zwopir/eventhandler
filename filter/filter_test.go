@@ -1,18 +1,19 @@
-package model
+package filter
 
 import (
 	"eventhandler/config"
+	"eventhandler/model"
 	"testing"
 )
 
 var (
 	modelTT = []struct {
-		message       Envelope
+		message       model.Envelope
 		expectedMatch bool
 		configFilters []config.Filter
 	}{
 		{
-			Envelope{
+			model.Envelope{
 				Sender:    []byte(`a_sender`),
 				Recipient: []byte(`a_recipient`),
 				Payload:   []byte(`{"check_name":"check_foo"}`),
@@ -31,7 +32,7 @@ var (
 			},
 		},
 		{
-			Envelope{
+			model.Envelope{
 				Sender:    []byte(`a_sender`),
 				Recipient: []byte(`a_recipient`),
 				Payload:   []byte(`{"check_name":"check_foo"}`),
@@ -50,7 +51,7 @@ var (
 			},
 		},
 		{
-			Envelope{
+			model.Envelope{
 				Sender:    []byte(`a_sender`),
 				Recipient: []byte(`a_recipient`),
 				Payload:   []byte(`{"check_name":"check_foo"}`),

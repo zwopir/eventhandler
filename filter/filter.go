@@ -1,10 +1,11 @@
-package model
+package filter
 
 import (
 	"bytes"
 	"encoding/json"
 	"errors"
 	"eventhandler/config"
+	"eventhandler/model"
 	"eventhandler/verify"
 	"fmt"
 	"github.com/prometheus/common/log"
@@ -78,7 +79,7 @@ type envelopeValueRetriever struct {
 
 // getValue implements the retriever interface
 func (r envelopeValueRetriever) getValue(v interface{}) ([]byte, error) {
-	e, ok := v.(Envelope)
+	e, ok := v.(model.Envelope)
 	if !ok {
 		return nil, fmt.Errorf("type assertion of %v to Envelope failed", v)
 	}
@@ -116,7 +117,7 @@ func newPayloadMessageValueRetriever(key string) payloadMessageKeyRetriever {
 
 // getValue implements the retriever interface
 func (p payloadMessageKeyRetriever) getValue(v interface{}) ([]byte, error) {
-	e, ok := v.(Envelope)
+	e, ok := v.(model.Envelope)
 	if !ok {
 		return nil, fmt.Errorf("type assertion of %v to Envelope failed", v)
 	}

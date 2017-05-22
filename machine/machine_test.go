@@ -2,6 +2,7 @@ package machine
 
 import (
 	"eventhandler/config"
+	"eventhandler/filter"
 	"eventhandler/model"
 	"fmt"
 	"github.com/nats-io/gnatsd/server"
@@ -283,7 +284,7 @@ func testCoordinatorDispatch(
 	for _, tt := range dispatchTestTable {
 
 		// create test filters
-		filters, err := model.NewFiltererFromConfig(tt.configFilters)
+		filters, err := filter.NewFiltererFromConfig(tt.configFilters)
 		if err != nil {
 			t.Errorf("failed to create filter for %v (%s)",
 				tt.configFilters,
