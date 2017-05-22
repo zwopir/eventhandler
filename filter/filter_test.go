@@ -1,7 +1,6 @@
 package filter
 
 import (
-	"eventhandler/config"
 	"eventhandler/model"
 	"testing"
 )
@@ -10,7 +9,7 @@ var (
 	modelTT = []struct {
 		message       model.Envelope
 		expectedMatch bool
-		configFilters []config.Filter
+		configFilters FilterConfig
 	}{
 		{
 			model.Envelope{
@@ -20,7 +19,7 @@ var (
 				Signature: []byte(`sig sig sig`),
 			},
 			true,
-			[]config.Filter{
+			FilterConfig{
 				{
 					Context: "payload",
 					Type:    "regexp",
@@ -39,7 +38,7 @@ var (
 				Signature: []byte(`sig sig sig`),
 			},
 			false,
-			[]config.Filter{
+			FilterConfig{
 				{
 					Context: "payload",
 					Type:    "regexp",
@@ -58,7 +57,7 @@ var (
 				Signature: []byte(`sig sig sig`),
 			},
 			true,
-			[]config.Filter{
+			FilterConfig{
 				{
 					Context: "envelope",
 					Type:    "regexp",
@@ -91,7 +90,7 @@ func TestFilters_Match(t *testing.T) {
 	}
 }
 
-var notCompilingFilter = []config.Filter{
+var notCompilingFilter = FilterConfig{
 	{
 		Context: "payload",
 		Type:    "regexp",

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"eventhandler/config"
 	"eventhandler/model"
 	"eventhandler/verify"
 	"fmt"
@@ -16,6 +15,17 @@ import (
 var (
 	RetrieverMissingFieldError error = errors.New("failed to retrieve value from interface")
 )
+
+// FilterConfig represents the filter config
+type FilterConfig []FilterSettings
+
+// Filter represents the filter settings, the Args keys and values are specific to the filtering
+// implemented in the package "model"
+type FilterSettings struct {
+	Type    string            `yaml:"type"`
+	Context string            `yaml:"context"`
+	Args    map[string]string `yaml:"args"`
+}
 
 // Filterer
 type Filterer interface {
@@ -179,7 +189,7 @@ func newSignatureFilterer(verifier *verify.Verifier) Filterer {
 
 // NewFiltererFromConfig returns a filterBattery, implementing the Filterer interface.
 // The basic filterer and retriever are chosen based on the provided filter config
-func NewFiltererFromConfig(configFilters []config.Filter) (Filterer, error) {
+func NewFiltererFromConfig(configFilters FilterConfig) (Filterer, error) {
 	var (
 		retriever retriever
 		matcher   Filterer
