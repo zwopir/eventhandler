@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"eventhandler/model"
-
 	"bytes"
 	"encoding/json"
+	"eventhandler/model"
 	"eventhandler/verify"
 	"github.com/nats-io/go-nats"
 	"github.com/nats-io/go-nats/encoders/protobuf"
 	"github.com/prometheus/common/log"
+	"github.com/satori/go.uuid"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
@@ -83,11 +83,15 @@ formatted as json (for example {"check_name":"check_connection"})`,
 				log.Fatalf("failed to sign message: %s", err)
 			}
 		}
+
+		// get a correlation ID
+		correlationID := []byte(uuid.NewV4().String())
 		msg := &model.Envelope{
-			Sender:    []byte(sender),
-			Recipient: []byte(recipient),
-			Payload:   []byte(payload),
-			Signature: signature,
+			Sender:        []byte(sender),
+			Recipient:     []byte(recipient),
+			Payload:       []byte(payload),
+			Signature:     signature,
+			CorrelationId: correlationID,
 		}
 		log.Debugf("sending message %s", msg.String())
 		err = encConn.Publish(subject, msg)
