@@ -7,14 +7,7 @@ import (
 
 // Config represents the app configuration
 type Config struct {
-	Global  Global  `yaml:"global"`
 	Command Command `yaml:"command"`
-}
-
-// Global represents the Generic/Global settings
-type Global struct {
-	Subject     string `yaml:"subject"`
-	NatsAddress string `yaml:"natsaddress"`
 }
 
 // Command represents the settings that specified the executed command

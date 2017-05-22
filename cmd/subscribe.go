@@ -14,6 +14,7 @@ import (
 	"github.com/nats-io/go-nats"
 	"github.com/prometheus/common/log"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"os"
 	"os/signal"
 	"text/template"
@@ -29,8 +30,10 @@ var subscribeCmd = &cobra.Command{
 The process listens on the specfied nats topic and runs the specified command if it receives a matching
 message. The message payload is rendered via the configured templated and passed to the commands stdin.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		natsUrl := viper.GetString("nats_url")
+		subject := viper.GetString("subject")
 		natsOptions := nats.Options{
-			Url:            cfg.Global.NatsAddress,
+			Url:            natsUrl,
 			AllowReconnect: true,
 			MaxReconnect:   -1,
 			ReconnectWait:  2 * time.Second,
@@ -43,7 +46,7 @@ message. The message payload is rendered via the configured templated and passed
 		}
 		nc, err := natsOptions.Connect()
 		if err != nil {
-			log.Fatalf("can't connect to nats server at %s: %s", cfg.Global.NatsAddress, err)
+			log.Fatalf("can't connect to nats server at %s: %s", natsUrl, err)
 		}
 		defer nc.Close()
 
@@ -80,7 +83,7 @@ message. The message payload is rendered via the configured templated and passed
 		cmdStdout := new(bytes.Buffer)
 
 		// start listening on the configured nats topic
-		err = coordinator.NatsListen(cfg.Global.Subject)
+		err = coordinator.NatsListen(subject)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -130,4 +133,10 @@ message. The message payload is rendered via the configured templated and passed
 
 func init() {
 	RootCmd.AddCommand(subscribeCmd)
+
+	subscribeCmd.Flags().String("subject", "eventhandler", "nats subject")
+	subscribeCmd.Flags().String("nats_url", nats.DefaultURL, "nats url")
+
+	viper.BindPFlag("subject", subscribeCmd.Flags().Lookup("subject"))
+	viper.BindPFlag("nats_url", subscribeCmd.Flags().Lookup("nats_url"))
 }

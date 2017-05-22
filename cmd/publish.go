@@ -29,6 +29,8 @@ formatted as json (for example {"check_name":"check_connection"})`,
 		sender := viper.GetString("sender")
 		recipient := viper.GetString("recipient")
 		privateKeyPath := viper.GetString("signkey")
+		natsUrl := viper.GetString("nats_url")
+		subject := viper.GetString("subject")
 
 		// validate payload
 		if payload == "" {
@@ -49,9 +51,9 @@ formatted as json (for example {"check_name":"check_connection"})`,
 			}
 			signMessage = true
 		}
-		nc, err := nats.Connect(cfg.Global.NatsAddress)
+		nc, err := nats.Connect(natsUrl)
 		if err != nil {
-			log.Fatalf("can't connect to nats server at %s: %s", cfg.Global.NatsAddress, err)
+			log.Fatalf("can't connect to nats server at %s: %s", natsUrl, err)
 		}
 		defer nc.Close()
 
@@ -88,7 +90,7 @@ formatted as json (for example {"check_name":"check_connection"})`,
 			Signature: signature,
 		}
 		log.Debugf("sending message %s", msg.String())
-		err = encConn.Publish(cfg.Global.Subject, msg)
+		err = encConn.Publish(subject, msg)
 		if err != nil {
 			log.Fatalf("failed to publish message: %s", err)
 		}
@@ -103,11 +105,15 @@ func init() {
 	publishCmd.Flags().String("sender", "localhost", "sender name")
 	publishCmd.Flags().String("recipient", "localhost", "recipient name")
 	publishCmd.Flags().String("signkey", "", "private key file for message signing")
+	publishCmd.Flags().String("subject", "eventhandler", "nats subject")
+	publishCmd.Flags().String("nats_url", nats.DefaultURL, "nats url")
 
 	// bind cobra flags to viper
 	viper.BindPFlag("sender", publishCmd.Flags().Lookup("sender"))
 	viper.BindPFlag("recipient", publishCmd.Flags().Lookup("recipient"))
 	viper.BindPFlag("signkey", publishCmd.Flags().Lookup("signkey"))
+	viper.BindPFlag("subject", publishCmd.Flags().Lookup("subject"))
+	viper.BindPFlag("nats_url", publishCmd.Flags().Lookup("nats_url"))
 
 	// payload is not a viper config value
 	publishCmd.Flags().StringVar(&payload, "payload", "", "message payload")
