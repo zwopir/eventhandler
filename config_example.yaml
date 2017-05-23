@@ -16,7 +16,7 @@ command:
 
 filters:
   - type: regexp
-    context: payload
+    context: payload map
     args:
       field: "check_name"
       regexp: "check_.+"

@@ -59,7 +59,7 @@ formatted as json (for example {"check_name":"check_connection"})`,
 
 		// unmarshal payload to make sure it can be unmarshaled in subscriber
 		// the unmarshaled data is discarded
-		payloadData := make(map[string]string)
+		var payloadData interface{}
 		err = json.Unmarshal([]byte(payload), &payloadData)
 		if err != nil {
 			log.Fatalf("payload %v is not json unmarshalable", payload)
