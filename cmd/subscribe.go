@@ -106,15 +106,17 @@ message. The message payload is rendered via the configured templated and passed
 
 		// dispatch messaged received from the queue to the handling function, i.e. the runner
 		coordinator.Dispatch(filters, func(v interface{}) error {
-			var err error
+			var (
+				err         error
+				payloadData interface{}
+			)
 			msg, ok := v.(model.Envelope)
 			if !ok {
 				return errors.New("failed to type assert protobuf message to envelope")
 			}
 			log.Infof("starting runner with message %s \n", msg.CorrelationId)
 
-			// unmarshal the payload to map[string]string
-			payloadData := make(map[string]string)
+			// unmarshal the payload
 			err = json.Unmarshal(msg.Payload, &payloadData)
 			if err != nil {
 				return fmt.Errorf("failed to unmarshal payload: %s", err)

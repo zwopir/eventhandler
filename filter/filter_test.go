@@ -21,7 +21,7 @@ var (
 			true,
 			FilterConfig{
 				{
-					Context: "payload",
+					Context: "payload map",
 					Type:    "regexp",
 					Args: map[string]string{
 						"field":  "check_name",
@@ -40,7 +40,7 @@ var (
 			false,
 			FilterConfig{
 				{
-					Context: "payload",
+					Context: "payload map",
 					Type:    "regexp",
 					Args: map[string]string{
 						"field":  "check_name",
@@ -68,6 +68,25 @@ var (
 				},
 			},
 		},
+		{
+			model.Envelope{
+				Sender:    []byte(`a_sender`),
+				Recipient: []byte(`a_recipient`),
+				Payload:   []byte(`{"check_name":"check_foo"}`),
+				Signature: []byte(`sig sig sig`),
+			},
+			true,
+			FilterConfig{
+				{
+					Context: "payload template",
+					Type:    "regexp",
+					Args: map[string]string{
+						"template": "{{ index . \"check_name\" }}",
+						"regexp":   "check_.+",
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -82,7 +101,7 @@ func TestFilters_Match(t *testing.T) {
 		}
 		matched, err := filters.Match(tt.message)
 		if err != nil {
-			t.Errorf("Match failed with %s", err)
+			t.Errorf("Match failed with: %s", err)
 		}
 		if matched != tt.expectedMatch {
 			t.Error("expected all filters to match, but got a mismatch")
@@ -92,7 +111,7 @@ func TestFilters_Match(t *testing.T) {
 
 var notCompilingFilter = FilterConfig{
 	{
-		Context: "payload",
+		Context: "payload map",
 		Type:    "regexp",
 		Args: map[string]string{
 			"field":  "check_name",

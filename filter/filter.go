@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/common/log"
 	"os"
 	"regexp"
+	"text/template"
 )
 
 var (
@@ -114,19 +115,19 @@ func newEnvelopeValueRetriever(field string) envelopeValueRetriever {
 	}
 }
 
-// payloadMessageKeyRetriever retrieves a value from the envelope's payload.
+// payloadMapRetriever retrieves a value from the envelope's payload.
 // It is assumed that the payload is marshalable to a map[string]string
-type payloadMessageKeyRetriever struct {
+type payloadMapRetriever struct {
 	key string
 }
 
-// newPayloadMessageValueRetriever returns a new payloadMessageKeyRetriever
-func newPayloadMessageValueRetriever(key string) payloadMessageKeyRetriever {
-	return payloadMessageKeyRetriever{key: key}
+// newPayloadMapRetriever returns a new payloadMessageKeyRetriever
+func newPayloadMapRetriever(key string) payloadMapRetriever {
+	return payloadMapRetriever{key: key}
 }
 
 // getValue implements the retriever interface
-func (p payloadMessageKeyRetriever) getValue(v interface{}) ([]byte, error) {
+func (p payloadMapRetriever) getValue(v interface{}) ([]byte, error) {
 	e, ok := v.(model.Envelope)
 	if !ok {
 		return nil, fmt.Errorf("type assertion of %v to Envelope failed", v)
@@ -140,6 +141,41 @@ func (p payloadMessageKeyRetriever) getValue(v interface{}) ([]byte, error) {
 		return []byte(ret), nil
 	}
 	return nil, RetrieverMissingFieldError
+}
+
+// payloadTemplateRetriever retrieves a value from the envelope's payload via template.
+// It is assumed that the payload is marshalable from/to json
+type payloadTemplateRetriever struct {
+	template *template.Template
+}
+
+func newPayloadTemplateRetriever(tmplString string) (payloadTemplateRetriever, error) {
+	tmpl, err := template.New("PayloadTemplate").Parse(tmplString)
+	if err != nil {
+		return payloadTemplateRetriever{}, err
+	}
+	return payloadTemplateRetriever{
+		template: tmpl,
+	}, nil
+}
+
+// getValue implements the retriever interface
+func (tr payloadTemplateRetriever) getValue(v interface{}) ([]byte, error) {
+	var data interface{}
+	e, ok := v.(model.Envelope)
+	if !ok {
+		return nil, fmt.Errorf("type assertion of %v to Envelope failed", v)
+	}
+	b := new(bytes.Buffer)
+	err := json.Unmarshal(e.Payload, &data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve data: %s", err)
+	}
+	err = tr.template.Execute(b, data)
+	if err != nil {
+		return nil, err
+	}
+	return b.Bytes(), nil
 }
 
 // newRegexpFilterer returns a filterer that implements the filterer interface.
@@ -199,12 +235,21 @@ func NewFiltererFromConfig(configFilters FilterConfig) (Filterer, error) {
 	filters := []Filterer{}
 	for _, cf := range configFilters {
 		switch cf.Context {
-		case "payload":
+		case "payload map":
 			field, found := cf.Args["field"]
 			if !found {
-				return nil, errors.New("mandatory argument 'field' not found in filter configuration.")
+				return nil, errors.New("mandatory argument 'field' not found in payload filter configuration.")
 			}
-			retriever = newPayloadMessageValueRetriever(field)
+			retriever = newPayloadMapRetriever(field)
+		case "payload template":
+			tmplString, found := cf.Args["template"]
+			if !found {
+				return nil, errors.New("mandatory agument 'template' not found in template filter configuration")
+			}
+			retriever, err = newPayloadTemplateRetriever(tmplString)
+			if err != nil {
+				return nil, fmt.Errorf("failed to initialize template value retreiver: %s", err)
+			}
 		case "envelope":
 			field, found := cf.Args["field"]
 			if !found {
@@ -212,9 +257,9 @@ func NewFiltererFromConfig(configFilters FilterConfig) (Filterer, error) {
 			}
 			retriever = newEnvelopeValueRetriever(field)
 		case "signature":
-
+			// pass
 		default:
-			log.Warnf("filter context %s is not supported", cf.Context)
+			log.Fatalf("filter context %q is not implemented", cf.Context)
 		}
 		switch cf.Type {
 		case "regexp":
@@ -242,7 +287,7 @@ func NewFiltererFromConfig(configFilters FilterConfig) (Filterer, error) {
 			}
 			matcher = newSignatureFilterer(verifier)
 		default:
-			log.Warnf("filter type %s is not implemented", cf.Type)
+			log.Fatalf("filter type %q is not implemented", cf.Type)
 		}
 		filters = append(filters, matcher)
 	}

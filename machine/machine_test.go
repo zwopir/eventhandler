@@ -64,7 +64,7 @@ var (
 		{
 			filter.FilterConfig{
 				{
-					Context: "payload",
+					Context: "payload map",
 					Type:    "regexp",
 					Args: map[string]string{
 						"field":  "check_name",
@@ -151,7 +151,7 @@ var (
 		{
 			filter.FilterConfig{
 				{
-					Context: "payload",
+					Context: "payload map",
 					Type:    "regexp",
 					Args: map[string]string{
 						"field":  "check_name",
@@ -223,7 +223,7 @@ var (
 		{
 			filter.FilterConfig{
 				{
-					Context: "payload",
+					Context: "payload map",
 					Type:    "regexp",
 					Args: map[string]string{
 						"field":  "check_name",
