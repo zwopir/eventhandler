@@ -111,7 +111,7 @@ message. The message payload is rendered via the configured templated and passed
 			if !ok {
 				return errors.New("failed to type assert protobuf message to envelope")
 			}
-			log.Debugf("got message %s\n", msg)
+			log.Infof("starting runner with message %s \n", msg.CorrelationId)
 
 			// unmarshal the payload to map[string]string
 			payloadData := make(map[string]string)
