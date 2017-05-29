@@ -50,10 +50,12 @@ func initConfig() {
 	if cfgFile != "" { // enable ability to specify config file via flag
 		viper.SetConfigFile(cfgFile)
 		log.Infof("using config file %s", cfgFile)
-	}
+		// If a config file is found, read it in.
+		if err := viper.ReadInConfig(); err != nil {
+			log.Fatalf("can't read config from config file %s: %s", viper.ConfigFileUsed(), err)
+		}
 
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("can't read config from config file %s: %s", viper.ConfigFileUsed(), err)
+	} else {
+		log.Info("no config file found, using environment vars and defaults")
 	}
 }
