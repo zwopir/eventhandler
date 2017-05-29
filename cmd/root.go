@@ -56,6 +56,6 @@ func initConfig() {
 		}
 
 	} else {
-		log.Info("no config file found, using environment vars and defaults")
+		log.Debug("no config file found, using environment vars and defaults")
 	}
 }
