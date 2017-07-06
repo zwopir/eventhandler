@@ -35,13 +35,13 @@ func Execute() {
 func init() {
 	// add go flags to pflag
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
-	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(InitConfig)
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/config.yaml)")
 }
 
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
+// InitConfig reads in config file and ENV variables if set.
+func InitConfig() {
 	viper.SetConfigName("config") // name of config file (without extension)
 	viper.AddConfigPath("$HOME")  // adding home directory as first search path
 	viper.AddConfigPath("/etc/eventhandler")
