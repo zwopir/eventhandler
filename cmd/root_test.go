@@ -44,8 +44,6 @@ func TestInitConfigDefaultPaths(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	config := viper.New()
-
 	InitConfig()
 
 	err = rmDefaultPath()
@@ -53,7 +51,7 @@ func TestInitConfigDefaultPaths(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	actual := config.AllKeys()
+	actual := viper.AllKeys()
 	sort.Strings(actual)
 	if !reflect.DeepEqual(actual, expected) {
 		t.Errorf("Config keys not loaded correctly. Expected:\n%+v\nActual:\n%+v", expected, actual)
