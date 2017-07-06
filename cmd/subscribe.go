@@ -32,6 +32,7 @@ message. The message payload is rendered via the configured templated and passed
 	Run: func(cmd *cobra.Command, args []string) {
 		natsUrl := viper.GetString("nats_url")
 		subject := viper.GetString("subject")
+		dialTimeout := 5 * time.Second
 		command := &machine.CoordinatorConfig{}
 		err := viper.UnmarshalKey("command", command)
 		if err != nil {
@@ -53,10 +54,11 @@ message. The message payload is rendered via the configured templated and passed
 			ReconnectedCB: func(conn *nats.Conn) {
 				log.Infof("successfully reconnected to %s", conn.ConnectedUrl())
 			},
+			Timeout: dialTimeout,
 		}
 		nc, err := natsOptions.Connect()
 		if err != nil {
-			log.Fatalf("can't connect to nats server at %s: %s", natsUrl, err)
+			log.Fatalf("can't connect to nats server at %s (dial timeout %s): %s", natsUrl, dialTimeout, err)
 		}
 		defer nc.Close()
 
