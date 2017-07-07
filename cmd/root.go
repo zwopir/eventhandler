@@ -56,4 +56,5 @@ func InitConfig() {
 	}
 
 	log.Debugf("read config from %s", viper.ConfigFileUsed())
+	log.Debugf("effective config: %v", viper.AllSettings())
 }
