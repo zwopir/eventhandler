@@ -1,3 +1,5 @@
 language: go
 go_import_path: eventhandler/
+before_script:
+  - go vet ./...
 
