@@ -35,13 +35,13 @@ func Execute() {
 func init() {
 	// add go flags to pflag
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
-	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(InitConfig)
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/config.yaml)")
 }
 
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
+// InitConfig reads in config file and ENV variables if set.
+func InitConfig() {
 	viper.SetConfigName("config") // name of config file (without extension)
 	viper.AddConfigPath("$HOME")  // adding home directory as first search path
 	viper.AddConfigPath("/etc/eventhandler")
@@ -49,13 +49,12 @@ func initConfig() {
 
 	if cfgFile != "" { // enable ability to specify config file via flag
 		viper.SetConfigFile(cfgFile)
-		log.Infof("using config file %s", cfgFile)
-		// If a config file is found, read it in.
-		if err := viper.ReadInConfig(); err != nil {
-			log.Fatalf("can't read config from config file %s: %s", viper.ConfigFileUsed(), err)
-		}
-
-	} else {
-		log.Debug("no config file found, using environment vars and defaults")
 	}
+
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("can't read config from config file %s: %s", viper.ConfigFileUsed(), err)
+	}
+
+	log.Debugf("read config from %s", viper.ConfigFileUsed())
+	log.Debugf("effective config: %v", viper.AllSettings())
 }

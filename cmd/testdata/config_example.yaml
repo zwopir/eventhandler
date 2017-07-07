@@ -1,0 +1,36 @@
+---
+sender: "nagios.example.com"
+recipient: "me.example.com"
+signkey: "verify/testdata/private.key"
+nats_url: "nats://127.0.0.1:4222"
+subject: "eventhandler"
+
+command:
+  cmd: "/bin/cat"
+  cmdargs:
+    - "-"
+  timeout: "2s"
+  stdintemplate: '{{ . | printf "%v" }}'
+  blackout: 5s
+  maxdispatches: 3
+
+filters:
+  - type: regexp
+    context: payload map
+    args:
+      field: "check_name"
+      regexp: "check_.+"
+  - type: regexp
+    context: envelope
+    args:
+      field: "sender"
+      regexp: "nagios.example.com"
+  - type: regexp
+    context: envelope
+    args:
+      field: "recipient"
+      regexp: "me.example.com"
+  - type: signature
+    context: signature
+    args:
+      verifykey: "verify/testdata/public.key"
