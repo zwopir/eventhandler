@@ -69,7 +69,7 @@ message. The message payload is rendered via the configured templated and passed
 		// parse the configured template
 		stdinTemplate, err := template.New("stdinTemplate").Parse(command.StdinTemplate)
 		if err != nil {
-			log.Fatalf("failed to parse stdin template:", err)
+			log.Fatal("failed to parse stdin template: ", err)
 		}
 
 		// a command only waits `timeout` for a command termination.
@@ -77,7 +77,7 @@ message. The message payload is rendered via the configured templated and passed
 		// For further documentation see godoc os/exec CommandContext
 		timeout, err := time.ParseDuration(command.Timeout)
 		if err != nil {
-			log.Fatalf("failed to parse cmd timeout:", err)
+			log.Fatal("failed to parse cmd timeout: ", err)
 		}
 
 		// create the runner
