@@ -1,7 +1,7 @@
 package filter
 
 import (
-	"eventhandler/model"
+	"github.com/zwopir/eventhandler/model"
 	"testing"
 )
 

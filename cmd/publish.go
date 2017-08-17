@@ -3,8 +3,8 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
-	"eventhandler/model"
-	"eventhandler/verify"
+	"github.com/zwopir/eventhandler/model"
+	"github.com/zwopir/eventhandler/verify"
 	"github.com/nats-io/go-nats"
 	"github.com/nats-io/go-nats/encoders/protobuf"
 	"github.com/prometheus/common/log"

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"eventhandler/cmd"
+	"github.com/zwopir/eventhandler/cmd"
 )
 
 func main() {

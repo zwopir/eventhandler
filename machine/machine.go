@@ -1,8 +1,8 @@
 package machine
 
 import (
-	"eventhandler/filter"
-	"eventhandler/model"
+	"github.com/zwopir/eventhandler/filter"
+	"github.com/zwopir/eventhandler/model"
 	"fmt"
 	"github.com/nats-io/go-nats"
 	"github.com/nats-io/go-nats/encoders/protobuf"

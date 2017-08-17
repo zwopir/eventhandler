@@ -1,8 +1,8 @@
 package machine
 
 import (
-	"eventhandler/filter"
-	"eventhandler/model"
+	"github.com/zwopir/eventhandler/filter"
+	"github.com/zwopir/eventhandler/model"
 	"fmt"
 	"github.com/nats-io/gnatsd/server"
 	testserver "github.com/nats-io/gnatsd/test"
