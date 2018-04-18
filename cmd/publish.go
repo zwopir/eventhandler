@@ -85,20 +85,23 @@ formatted as json (for example {"check_name":"check_connection"})`,
 		}
 
 		// get a correlation ID
-		correlationID := []byte(uuid.NewV4().String())
+		correlationID, err := uuid.NewV4()
+		if err != nil {
+			log.Fatalf("unable to generate correlation ID: %s", err)
+		}
 		msg := &model.Envelope{
 			Sender:        []byte(sender),
 			Recipient:     []byte(recipient),
 			Payload:       []byte(payload),
 			Signature:     signature,
-			CorrelationId: correlationID,
+			CorrelationId: correlationID.Bytes(),
 		}
 		log.Debugf("sending message %s", msg.String())
 		err = encConn.Publish(subject, msg)
 		if err != nil {
 			log.Fatalf("failed to publish message: %s", err)
 		}
-		log.Infof("sent message with id %s", string(correlationID))
+		log.Infof("sent message with id %s", correlationID)
 	},
 }
 
