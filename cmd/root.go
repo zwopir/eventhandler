@@ -13,7 +13,8 @@ import (
 )
 
 var (
-	cfgFile string
+	cfgFile  string
+	logLevel string
 )
 
 // RootCmd represents the base command when called without any subcommands
@@ -38,6 +39,7 @@ func init() {
 	cobra.OnInitialize(InitConfig)
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/config.yaml)")
+	RootCmd.PersistentFlags().StringVar(&logLevel, "log.level", "info", "log level")
 }
 
 // InitConfig reads in config file and ENV variables if set.
@@ -46,6 +48,8 @@ func InitConfig() {
 	viper.AddConfigPath("$HOME")  // adding home directory as first search path
 	viper.AddConfigPath("/etc/eventhandler")
 	viper.AutomaticEnv() // read in environment variables that match
+
+	log.Base().SetLevel(logLevel)
 
 	if cfgFile != "" { // enable ability to specify config file via flag
 		viper.SetConfigFile(cfgFile)
